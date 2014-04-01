@@ -10,6 +10,10 @@ class GUINode(SmartNode, CSSNode):
     SmartNode.__init__(self)
     CSSNode.__init__(self, style)
     self.anchor = (0, 0)
+  
+  def get_nodes(self):
+    children = self.get_children()
+    return [child for child in children if isinstance(child, CSSNode)]
 
 
 class GUIImage(GUINode):
@@ -18,16 +22,13 @@ class GUIImage(GUINode):
     self.image = image
     self.add(cocos.sprite.Sprite(image, anchor=(0,0)))
   
-  def get_children(self):
-    return []
-  
   def get_content_size(self):
     return (self.image.width, self.image.height)
 
 
 class GUIWindow(SmartLayer, CSSNode):
   
-  is_event_listener = True
+  is_event_handler = True
   
   def __init__(self, *args, **kwargs):
     SmartLayer.__init__(self, *args, **kwargs)
@@ -44,20 +45,21 @@ class GUIWindow(SmartLayer, CSSNode):
       )
     SmartLayer.add(self, child, *args, **kwargs)
   
-  def get_children(self):
-    return SmartLayer.get_children(self)[:1]
+  def get_nodes(self):
+    return self.get_children()[:1]
   
   def get_content_size(self):
     child = self.get_children()[0]
     return (child.width, child.height)
 
-## a simple test
-#from ..resources import get as resources_get
-#from .layouts import VerticalLayout
-#window = GUIWindow()
-#layout = VerticalLayout()
-#img = resources_get('grassland')
-#layout.add(GUIImage(img))
-#layout.add(GUIImage(img))
-#window.add(layout)
-#window.order()
+
+# a simple test
+from ..resources import get as resources_get
+from .layouts import VerticalLayout
+window = GUIWindow()
+layout = VerticalLayout()
+img = resources_get('grassland')
+layout.add(GUIImage(img))
+layout.add(GUIImage(img))
+window.add(layout)
+window.order()

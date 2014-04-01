@@ -128,7 +128,7 @@ def _evaluate_node(node):
 
 def evaluate(window, element = None):
   element = element or window
-  children = element.get_children()
+  children = element.get_nodes()
   for child in children:
     assert(child.parent is element)
     evaluate(window, child)
@@ -159,7 +159,7 @@ class CSSNode(object):
   def get_content_size(self):
     raise NotImplementedError
   
-  def get_children(self):
+  def get_nodes(self):
     raise NotImplementedError
   
   def apply_style(self, **options):
