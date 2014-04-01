@@ -53,13 +53,13 @@ class GUIWindow(SmartLayer, CSSNode):
     return (child.width, child.height)
 
 
-# a simple test
-from ..resources import get as resources_get
-from .layouts import VerticalLayout
-window = GUIWindow()
-layout = VerticalLayout()
-img = resources_get('grassland')
-layout.add(GUIImage(img))
-layout.add(GUIImage(img))
-window.add(layout)
-window.order()
+## a simple test
+#from ..resources import get as resources_get
+#from .layouts import VerticalLayout
+#window = GUIWindow()
+#layout = VerticalLayout()
+#img = resources_get('grassland')
+#layout.add(GUIImage(img))
+#layout.add(GUIImage(img))
+#window.add(layout)
+#window.order()
