@@ -1,3 +1,4 @@
+from collections import defaultdict
 
 def to_words(prop):
   return prop.split('-')
@@ -6,57 +7,135 @@ def from_words(words):
   words = filter(None, words)
   return '-'.join(words)
 
-from border import Border
 
-_default_style = {
-  'width': 'auto',
-  'height': 'auto',
-  'margin': 0,
-  'padding': 0,
-  'display': 'block',
-  'border': Border(),
-  'position': 'static',
-  'left': 'auto',
-  'top': 'auto',
-  # TODO implement CSS3 styles.
-}
-
-_shortcuts = {
-  'padding-top':    'padding',
-  'padding-left':   'padding',
-  'padding-right':  'padding',
-  'padding-bottom': 'padding',
+class StylesContainer(dict):
   
-  'margin-top':    'margin',
-  'margin-left':   'margin',
-  'margin-right':  'margin',
-  'margin-bottom': 'margin',
+  # e. g. 'border', 'padding', etc.
+  prefix = None
   
-  # ... etc.
-}
-
-
-class Style(dict):
+  # names that are available within prefix,
+  # e. g. 'color' (full name 'border-color').
+  subnames = []
+  
+  # default values for properties
+  defaults = {}
+  
+  def __repr__(self):
+    return '%s(%s)' % (type(self).__name__, dict.__repr__(self))
+  
+  def get_as_value(self):
+    # abstract
+    raise NotImplementedError
+  
+  def set_to_value(self, value):
+    # abstract
+    raise NotImplementedError
+  
+  def get_default(self, subname):
+    default = self.defaults[subname]
+    if type(default) == type:
+      return default()
+    else:
+      return default
+  
+  def get_by_subname(self, subname):
+    assert(subname in self.subnames)
+    subobject = super(StylesContainer, self).get(subname)
+    if subobject is None:
+      subobject = self.get_default(subname)
+      self.set_by_subname(subname, subobject)
+    return subobject
+  
+  def set_by_subname(self, subname, value):
+    assert(subname in self.subnames)
+    super(StylesContainer, self).__setitem__(subname, value)
+  
   def __getitem__(self, which):
-    # 1. The property is set.
-    if which in self:
-      return super(Style, self).__getitem__(which)
-    # 2. The property is not set, but there is a default value,
-    if which in _default_style:
-      return _default_style[which]
-    # 3. There is a shortcut for it.
-    if which in _shortcuts:
-      return self[_shortcuts[which]]
-    # 4. A property of a subobject (e. g. Border) is requested.
     words = to_words(which)
-    obj = self.get(words[0], _default_style.get(words[0]))
-    if isinstance(obj, dict):
-      return obj[which]
-    # 5. Not found.
-    raise KeyError('No such property: `%s`' % which)
+    if self.prefix is None:
+      words = [None] + words
+    assert(words[0] == self.prefix)
+    if len(words) == 1:
+      return self.get_as_value()
+    subname = words[1]
+    subobject = self.get_by_subname(subname)
+    if isinstance(subobject, StylesContainer):
+      return subobject[from_words(words[1:])]
+    elif len(words) == 2:
+      return subobject
+    else:
+      raise KeyError(which)
   
   def __setitem__(self, which, value):
-    raise NotImplementedError
+    words = to_words(which)
+    if self.prefix is None:
+      words = [None] + words
+    assert(words[0] == self.prefix)
+    if len(words) == 1:
+      self.set_to_value(value)
+      return
+    subname = words[1]
+    # the following also creates a new object if necessary
+    currobject = self.get_by_subname(subname)
+    if isinstance(currobject, StylesContainer):
+      currobject[from_words(words[1:])] = value
+    else:
+      self.set_by_subname(subname, value)
+
+
+class SidedStylesContainer(StylesContainer):
+  subnames = ['left', 'top', 'right', 'bottom']
+
+
+class CumulativeStylesContainer(StylesContainer):
+  def get_as_value(self):
+    #import ipdb; ipdb.set_trace()
+    values = map(self.get_by_subname, self.subnames)
+    if len(set(values)) != 1:
+      raise ValueError(
+        'Can\'t return cumulative value `%s`' % self.prefix
+      )
+    return values.pop()
+  
+  def set_to_value(self, value):
+    for subname in self.subnames:
+      self.set_by_subname(subname, value)
+
+
+class Margin(SidedStylesContainer, CumulativeStylesContainer):
+  prefix = 'margin'
+  defaults = defaultdict(int)
+
+
+class Padding(SidedStylesContainer, CumulativeStylesContainer):
+  prefix = 'padding'
+  defaults = defaultdict(int)
+
+
+from border import Border
+from background import Background
+
+
+class Style(StylesContainer):
+  defaults = {
+    'width': 'auto',
+    'height': 'auto',
+    'margin': Margin,
+    'padding': Padding,
+    'display': 'block',
+    'border': Border,
+    'position': 'static',
+    'left': 'auto',
+    'top': 'auto',
+    'background': Background,
+  }
+  subnames = defaults.keys()
+  
+  def get_as_value(self):
+    return self
+  
+  def set_to_value(self, value):
+    self.update(value)
 
 
 def _evaluate_node(node):
@@ -168,6 +247,4 @@ class CSSNode(object):
       options.pop('node')
     for key, value in options.iteritems():
       setattr(self, key, value)
-    
-    
 

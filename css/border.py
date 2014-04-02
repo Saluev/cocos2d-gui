@@ -1,4 +1,19 @@
-from . import to_words, from_words
+from . import to_words, from_words, StylesContainer
+
+
+class BorderImage(StylesContainer):
+  prefix = 'image'
+  defaults = {
+    'source': None,
+    'slice': 100, # TODO percent
+    'width': 1, # NOT pixels => TODO pixels
+    'outset': 0,
+    'repeat': 'stretch',
+  }
+  subnames = defaults.keys()
+
+
+# TODO refactor Border
 
 _border_sides = [
   'top', 'bottom',
@@ -17,7 +32,7 @@ _border_defaults = {
   'color': None,
   'style': 'none',
   'width': 0,
-  'image': None, # TODO BorderImage class
+  'image': BorderImage,
   'radius': 0,
 }
 
@@ -28,7 +43,7 @@ def _side(words):
   return words[1] if len(words) > 1 and words[1] in _border_sides else None
 
 
-class Border(dict):
+class Border(StylesContainer):
   """Object keeping border CSS properties.
   
   >>> b = Border()
