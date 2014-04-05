@@ -30,8 +30,7 @@ class VerticalLayout(GUILayout):
     xoffset, yoffset = self.content_box[:2]
     for child in children:
       box = child.margin_box
-      position = child.positioning(xoffset, yoffset)
-      child.position = position
+      child.set_position(xoffset, yoffset)
       yoffset += box[3]
       yoffset += self.spacing
 

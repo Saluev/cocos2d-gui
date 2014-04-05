@@ -20,6 +20,12 @@ class StylesContainer(dict):
   # default values for properties
   defaults = {}
   
+  def __str__(self):
+    try:
+      return str(self.get_as_value())
+    except (NotImplementedError, ValueError):
+      return repr(self)
+  
   def __repr__(self):
     return '%s(%s)' % (type(self).__name__, dict.__repr__(self))
   
@@ -33,13 +39,14 @@ class StylesContainer(dict):
   
   def get_default(self, subname):
     default = self.defaults[subname]
-    if type(default) == type:
+    if type(default) == type or type(default) == type(lambda:None):
       return default()
     else:
       return default
   
   def get_by_subname(self, subname):
-    assert(subname in self.subnames)
+    if subname not in self.subnames:
+      raise KeyError(subname)
     subobject = super(StylesContainer, self).get(subname)
     if subobject is None:
       subobject = self.get_default(subname)
@@ -47,7 +54,8 @@ class StylesContainer(dict):
     return subobject
   
   def set_by_subname(self, subname, value):
-    assert(subname in self.subnames)
+    if subname not in self.subnames:
+      raise KeyError(subname)
     super(StylesContainer, self).__setitem__(subname, value)
   
   def __getitem__(self, which):
@@ -81,6 +89,12 @@ class StylesContainer(dict):
       currobject[from_words(words[1:])] = value
     else:
       self.set_by_subname(subname, value)
+  
+  def __getattr__(self, which):
+    try:
+      return super(StylesContainer, self).__getattr__(self, which)
+    except AttributeError:
+      return self.get_by_subname(which)
 
 
 class SidedStylesContainer(StylesContainer):
@@ -213,11 +227,19 @@ def evaluate(window, element = None):
     evaluate(window, child)
   _evaluate_node(element)
 
+def _shift_box(box, xy):
+  return (
+    box[0] + xy[0],
+    box[1] + xy[1],
+    box[2], box[3],
+  )
+
 
 class CSSNode(object):
   def __init__(self, style = None):
     style = style or Style()
     self.style = style
+    self.positioning = lambda x, y: (x, y)
   
   @property
   def width(self):
@@ -247,4 +269,15 @@ class CSSNode(object):
       options.pop('node')
     for key, value in options.iteritems():
       setattr(self, key, value)
+  
+  def set_position(self, x, y):
+    position = self.positioning(x, y)
+    if hasattr(self, 'position'):
+      self.position = position
+    self.margin_box  = _shift_box(self.margin_box , position)
+    self.padding_box = _shift_box(self.padding_box, position)
+    self.border_box  = _shift_box(self.border_box , position)
+    self.content_box = _shift_box(self.content_box, position)
+    
+    
 
