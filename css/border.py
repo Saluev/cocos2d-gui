@@ -4,18 +4,7 @@ from collections import defaultdict
 from . import to_words, from_words
 from . import StylesContainer, SidedStylesContainer
 from .color import Color
-
-
-class BorderImage(StylesContainer):
-  prefix = 'image'
-  defaults = {
-    'source': None,
-    'slice': 100, # TODO percent
-    'width': 1, # NOT pixels => TODO pixels
-    'outset': 0,
-    'repeat': 'stretch',
-  }
-  subnames = defaults.keys()
+from .borderimage import BorderImage
 
 
 class BorderSide(StylesContainer):
@@ -24,19 +13,13 @@ class BorderSide(StylesContainer):
     'color': 'transparent',
     'style': 'none',
     'width': 0,
-    'image': BorderImage,
     'radius': 0,
   }
   subnames = defaults.keys()
   
-  #def __new__(cls, side, border = None, *args, **kwargs):
-    #assert(side in ['left', 'top', 'right', 'bottom'])
-    #result = StylesContainer.__new__(cls, *args, **kwargs)
-    #result.prefix = side
-    #return result
-  
   def __init__(self, side, *args, **kwargs):
     super(BorderSide, self).__init__(*args, **kwargs)
+    assert(side in ('left', 'top', 'right', 'bottom'))
     self.prefix = side
   
   def get_as_value(self):
@@ -51,7 +34,10 @@ class BorderSide(StylesContainer):
     self.set_by_subname('style', style)
     self.set_by_subname('color', color)
   
-  def _Border__draw(self, border_box, border):
+  ## drawing functions ##
+  def _Border__draw(self, node):
+    border_box = node.border_box
+    border = node.style.border
     if self.width <= 0 or \
        self.style == 'none' or \
        self.color == 'transparent': # TODO self.color.is_transparent()
@@ -83,7 +69,7 @@ class BorderSide(StylesContainer):
         (l + border.left .width, b - width)]
     else:
       assert False, '`BorderSide` class seems to be invalid.'
-    # running OpenGL render
+    # finally running OpenGL render
     from OpenGL import GL
     GL.glPushAttrib(GL.GL_CURRENT_BIT)
     GL.glColor3ubv(color)
@@ -107,7 +93,10 @@ class Border(SidedStylesContainer):
     'top'   : lambda: BorderSide('top'   ),
     'right' : lambda: BorderSide('right' ),
     'bottom': lambda: BorderSide('bottom'),
+    'image': BorderImage,
   }
+  sides = SidedStylesContainer.subnames
+  subnames = defaults.keys()
   
   def get_as_value(self):
     result = []
@@ -116,7 +105,7 @@ class Border(SidedStylesContainer):
     return tuple(result)
   
   def set_to_value(self, value):
-    for side in self.subnames:
+    for side in self.sides:
       which = from_words((self.prefix, side))
       self[which] = value
   
@@ -130,15 +119,13 @@ class Border(SidedStylesContainer):
     modifier = words[1]
     assert(modifier not in self.subnames)
     options = []
-    for side in self.subnames:
+    for side in self.sides:
       option_name = from_words((self.prefix, side, modifier))
       options.append(self[option_name])
     if len(set(options)) > 1:
-      raise ValueError(
-        "There are different values for `%s` "
-        "property at different sides" % which
-      )
-    return options.pop()
+      return tuple(options)
+    else:
+      return options.pop()
   
   def __setitem__(self, which, value):
     try:
@@ -149,16 +136,18 @@ class Border(SidedStylesContainer):
     assert(len(words) == 2)
     modifier = words[1]
     assert(modifier not in self.subnames)
-    for side in self.subnames:
+    for side in self.sides:
       which = from_words((self.prefix, side, modifier))
-      self[which] = value
+      self[which] = value # TODO what if the value is a tuple?
   
   def draw(self, node):
-    box = node.border_box
-    self.left  .__draw(box, self)
-    self.top   .__draw(box, self)
-    self.right .__draw(box, self)
-    self.bottom.__draw(box, self)
+    if self.image.source != 'none':
+      self.image.__draw(node)
+    else:
+      self.left  .__draw(node)
+      self.top   .__draw(node)
+      self.right .__draw(node)
+      self.bottom.__draw(node)
     
   
   

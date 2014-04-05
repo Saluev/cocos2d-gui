@@ -37,6 +37,9 @@ class StylesContainer(dict):
     # abstract
     raise NotImplementedError
   
+  def on_change(self):
+    pass
+  
   def get_default(self, subname):
     default = self.defaults[subname]
     if type(default) == type or type(default) == type(lambda:None):
@@ -89,6 +92,7 @@ class StylesContainer(dict):
       currobject[from_words(words[1:])] = value
     else:
       self.set_by_subname(subname, value)
+    self.on_change()
   
   def __getattr__(self, which):
     try:
@@ -98,7 +102,9 @@ class StylesContainer(dict):
 
 
 class SidedStylesContainer(StylesContainer):
-  subnames = ['left', 'top', 'right', 'bottom']
+  subnames = ['top', 'right', 'bottom', 'left']
+  # WARNING: order is important here. this order
+  # corresponds to CSS specifications.
 
 
 class CumulativeStylesContainer(StylesContainer):
