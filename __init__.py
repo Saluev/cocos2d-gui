@@ -104,14 +104,15 @@ img2 = GUIImage(resources_get('stone_pile_1'))
 img3 = resources_get('granite_frame')
 img1.style['border'] = 5, 'solid', 'green'
 img1.style['background-color'] = 'darkgreen'
-img1.pseudostyle('hover')['border-color'] = 'blue'
+#img1.pseudostyle('hover')['border-right-color'] = 'blue'
 img2.style['border'] = 5, 'solid', 'blue'
 img2.style['background-color'] = 'darkblue'
 layout.style['background-image'] = img1.image
 #layout.style['background-size'] = 'contain'
-layout.style['border-image-source'] = img3
-layout.style['border-image-slice'] = ('fill', 17)
-layout.style['border-image-repeat'] = 'repeat'
+img3.apply_to(layout)
+#layout.style['border-image-source'] = img3
+#layout.style['border-image-slice'] = ('fill', 17)
+#layout.style['border-image-repeat'] = 'repeat'
 layout.add(img1)
 layout.add(img2)
 window.add(layout)

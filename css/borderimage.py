@@ -37,8 +37,8 @@ class BorderImage(StylesContainer):
   
   def __get_image_slice(self):
     slice = self.slice
-    if isinstance(slice, tuple) and 'fill' in slice:
-      slice = filter('fill'.__ne__, slice) # removing 'fill'
+    if isinstance(slice, (tuple, list)) and 'fill' in slice:
+      slice = filter(lambda s: s != 'fill', slice) # removing 'fill'
       return (True, ) + self.__four_values(slice)
     else:
       return (False,) + self.__four_values(slice)
