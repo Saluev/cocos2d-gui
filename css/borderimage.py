@@ -63,7 +63,7 @@ class BorderImage(StylesContainer):
   def __evaluate_image_width(self, node):
     # see developer.mozilla.org/en-US/docs/Web/CSS/border-image-width
     image_width = self.__get_image_width()
-    border_width = self.__four_values(node.style['border-width'])
+    border_width = self.__four_values(node.evaluated_style['border-width'])
     def evaluate_width(iw, bw):
       if isinstance(iw, int):      # ratio
         return iw * bw
@@ -236,15 +236,16 @@ class BorderImage(StylesContainer):
       self.__texcoords.extend(tc)
     
     self.__vertices_count = len(self.__vertices)
-    self.__vertices  = sum(self.__vertices,  ())
-    self.__texcoords = sum(self.__texcoords, ())
+    #self.__vertices  = sum(self.__vertices,  ())
+    #self.__texcoords = sum(self.__texcoords, ())
     
     # now optimization
-    import OpenGL.arrays.lists as lists, OpenGL.GL as GL
-    handler = lists.ListHandler()
-    self.__vertices  = handler.asArray(self.__vertices,  GL.GL_FLOAT)
-    self.__texcoords = handler.asArray(self.__texcoords, GL.GL_FLOAT)
-    
+    #import OpenGL.arrays.lists as lists, OpenGL.GL as GL
+    #handler = lists.ListHandler()
+    #self.__vertices  = handler.asArray(self.__vertices,  GL.GL_FLOAT)
+    #self.__texcoords = handler.asArray(self.__texcoords, GL.GL_FLOAT)
+    self.__vertices  = texturing.to_buffer(self.__vertices )
+    self.__texcoords = texturing.to_buffer(self.__texcoords)
   
   def on_change(self):
     self.__vertices = self.__texcoords = None

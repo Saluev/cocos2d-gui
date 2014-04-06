@@ -1,4 +1,12 @@
 import operator
+try:
+  from OpenGL import GL
+  import OpenGL, OpenGL.arrays.lists
+  _list_handler = OpenGL.arrays.lists.ListHandler()
+except ImportError:
+  from logging import warn
+  warn('Couldn\'t import PyOpenGL.')
+
 
 def rect_from_sides(left, top, right, bottom):
   """Returns list of points of a rectangle
@@ -111,7 +119,6 @@ def tile(texture, rect, tile_size=None,
     # typecasting them back
     return map(tuple, vertices), map(tuple, texcoords)
   
-  from OpenGL import GL
   GL.glPushAttrib(GL.GL_ENABLE_BIT | GL.GL_TEXTURE_BIT | GL.GL_CURRENT_BIT)
   GL.glEnable(texture.target)
   GL.glBindTexture(texture.target, texture.id)
@@ -121,6 +128,13 @@ def tile(texture, rect, tile_size=None,
     GL.glVertex2fv(vertex)
   GL.glEnd()
   GL.glPopAttrib()
+
+def to_buffer(iterable, typecode=None):
+  if typecode is None:
+    typecode = GL.GL_FLOAT
+  array = sum(map(tuple, iterable), ())
+  return _list_handler.asArray(array, typecode)
   
-  
-  
+
+
+

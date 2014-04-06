@@ -11,6 +11,20 @@ class GUILayout(GUINode):
   
   def add(self, child, *args, **kwargs):
     super(GUILayout, self).add(child, *args, **kwargs)
+  
+  def add(self, *args, **kwargs):
+    super(GUILayout, self).add(*args, **kwargs)
+    nodes = self.get_nodes()
+    nodes_count = len(nodes)
+    for i, node in enumerate(nodes):
+      if i == 0:
+        node.add_state('first-child')
+      else:
+        node.remove_state('first-child')
+      if i == nodes_count - 1:
+        node.add_state('last-child')
+      else:
+        node.remove_state('last-child')
 
 
 class VerticalLayout(GUILayout):

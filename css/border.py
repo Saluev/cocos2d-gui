@@ -3,6 +3,7 @@ from collections import defaultdict
 # css
 from . import to_words, from_words
 from . import StylesContainer, SidedStylesContainer
+from . import texturing
 from .color import Color
 from .borderimage import BorderImage
 
@@ -21,6 +22,7 @@ class BorderSide(StylesContainer):
     super(BorderSide, self).__init__(*args, **kwargs)
     assert(side in ('left', 'top', 'right', 'bottom'))
     self.prefix = side
+    self.__vertices = None
   
   def get_as_value(self):
     width = self.get_by_subname('width')
@@ -35,12 +37,13 @@ class BorderSide(StylesContainer):
     self.set_by_subname('color', color)
   
   ## drawing functions ##
-  def _Border__draw(self, node):
+  def __prepare(self, node):
     border_box = node.border_box
-    border = node.style.border
+    border = node.evaluated_style.border
     if self.width <= 0 or \
        self.style == 'none' or \
        self.color == 'transparent': # TODO self.color.is_transparent()
+      self.__vertices = []
       return
     if self.style != 'solid':
       raise NotImplementedError(
@@ -69,15 +72,28 @@ class BorderSide(StylesContainer):
         (l + border.left .width, b - width)]
     else:
       assert False, '`BorderSide` class seems to be invalid.'
-    # finally running OpenGL render
+    self.__color = color
+    self.__vertices_count = len(vertices)
+    self.__vertices = texturing.to_buffer(vertices)
+  
+  def _Border__draw(self, node):
+    if self.__vertices is None:
+      print "Prepating!"
+      self.__prepare(node)
+    elif not self.__vertices:
+      return
     from OpenGL import GL
-    GL.glPushAttrib(GL.GL_CURRENT_BIT)
-    GL.glColor3ubv(color)
-    GL.glBegin(GL.GL_QUADS)
-    map(GL.glVertex2fv, vertices)
-    GL.glEnd()
+    GL.glPushAttrib(GL.GL_CURRENT_BIT | GL.GL_ENABLE_BIT)
+    GL.glColor3ubv(self.__color)
+    #GL.glBegin(GL.GL_QUADS)
+    #map(GL.glVertex2fv, self.__vertices)
+    #GL.glEnd()
+    GL.glPushClientAttrib(GL.GL_CLIENT_ALL_ATTRIB_BITS)
+    GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
+    GL.glVertexPointer(2, GL.GL_FLOAT, 0, self.__vertices)
+    GL.glDrawArrays(GL.GL_QUADS, 0, self.__vertices_count)
+    GL.glPopClientAttrib()
     GL.glPopAttrib()
-
 
 class Border(SidedStylesContainer):
   """Object keeping border CSS properties.

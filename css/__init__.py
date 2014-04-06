@@ -158,8 +158,12 @@ class Style(StylesContainer):
     self.update(value)
 
 
+styles = defaultdict(Style)
+
+
 def _evaluate_node(node):
-  parent, style = node.parent, node.style
+  node.evaluate_style()
+  parent, style = node.parent, node.evaluated_style
   left, top = style['left'], style['top']
   left = 0 if left == 'auto' else left
   top  = 0 if top  == 'auto' else top
@@ -243,25 +247,78 @@ def _shift_box(box, xy):
 
 
 class CSSNode(object):
+  
   def __init__(self, style = None):
+    self.id = '%x' % id(self)
     style = style or Style()
     self.style = style
+    self.__evaluated_style = None
+    self.state = set()
     self.positioning = lambda x, y: (x, y)
+  
+  def add_state(self, state):
+    self.state.add(state)
+  
+  def remove_state(self, state):
+    if state in self.state:
+      self.state.remove(state)
+  
+  def evaluate_style(self):
+    id_query = '#' + self.id
+    classes = type(self).mro()
+    class_names   = (cls.__name__ for cls in classes if issubclass(cls, CSSNode))
+    class_queries = map('.'.__add__, class_names)[::-1]
+    style = Style()
+    # common stylesheet
+    applicable_styles = ['*']
+    # class-specific stylesheets
+    for query in class_queries:
+      applicable_styles.append(query)
+      applicable_styles.extend(query + ':' + pseudo for pseudo in self.state)
+    # object-specific stylesheets
+    applicable_styles.append(id_query)
+    applicable_styles.extend(id_query + ':' + pseudo for pseudo in self.state)
+    # now collecting all together
+    print applicable_styles
+    for applicable_style in applicable_styles:
+      style.update(styles[applicable_style])
+    self.evaluated_style = style
+  
+  @property
+  def evaluated_style(self):
+    if self.__evaluated_style is not None:
+      return self.__evaluated_style
+    from logging import warn
+    warn('Trying to access `CSSNode.evaluated_style` '
+         'before it was actually evaluated')
+    return styles['#' + self.id]
+  
+  @evaluated_style.setter
+  def evaluated_style(self, style):
+    self.__evaluated_style = style
+  
+  @property
+  def style(self):
+    return styles['#' + self.id]
+  
+  @style.setter
+  def style(self, value):
+    styles['#' + self.id] = value
   
   @property
   def width(self):
     if hasattr(self, 'margin_box'):
       return self.margin_box[2]
-    if self.style['width'] != 'auto':
-      return self.style['width']
+    if self.evaluated_style['width'] != 'auto':
+      return self.evaluated_style['width']
     raise NotImplementedError
   
   @property
   def height(self):
     if hasattr(self, 'margin_box'):
       return self.margin_box[3]
-    if self.style['height'] != 'auto':
-      return self.style['height']
+    if self.evaluated_style['height'] != 'auto':
+      return self.evaluated_style['height']
     raise NotImplementedError
   
   def get_content_size(self):
@@ -285,6 +342,4 @@ class CSSNode(object):
     self.padding_box = _shift_box(self.padding_box, position)
     self.border_box  = _shift_box(self.border_box , position)
     self.content_box = _shift_box(self.content_box, position)
-    
-    
 

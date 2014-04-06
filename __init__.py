@@ -19,8 +19,8 @@ class GUINode(SmartNode, CSSNode):
   
   def draw(self, *args, **kwargs):
     super(GUINode, self).draw(*args, **kwargs)
-    self.style.background.draw(self)
-    self.style.border.draw(self)
+    self.evaluated_style.background.draw(self)
+    self.evaluated_style.border.draw(self)
 
 
 class GUIImage(GUINode):
@@ -95,8 +95,8 @@ layout.style['background-image'] = img1.image
 layout.style['border-image-source'] = img3
 layout.style['border-image-slice'] = ('fill', 17)
 layout.style['border-image-repeat'] = 'repeat'
-#layout.add(img1)
-#layout.add(img2)
+layout.add(img1)
+layout.add(img2)
 window.add(layout)
 window.position = (50, 50)
 window.order()
