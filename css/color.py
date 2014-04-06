@@ -172,4 +172,4 @@ def Color(s):
     "implemented for color."
   )
 
-_named_colors = {k.lower(): Color(v) for k, v in _named_colors.iteritems()}
+_named_colors = {k.lower(): Color(v) for k, v in _named_colors.items()}

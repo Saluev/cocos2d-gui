@@ -256,12 +256,18 @@ class CSSNode(object):
     self.state = set()
     self.positioning = lambda x, y: (x, y)
   
+  def clear(self):
+    self.__evaluated_style = None
+    self.order()
+  
   def add_state(self, state):
     self.state.add(state)
+    self.clear()
   
   def remove_state(self, state):
     if state in self.state:
       self.state.remove(state)
+      self.clear()
   
   def evaluate_style(self):
     id_query = '#' + self.id
@@ -279,7 +285,7 @@ class CSSNode(object):
     applicable_styles.append(id_query)
     applicable_styles.extend(id_query + ':' + pseudo for pseudo in self.state)
     # now collecting all together
-    print applicable_styles
+    print(applicable_styles)
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style
@@ -304,6 +310,9 @@ class CSSNode(object):
   @style.setter
   def style(self, value):
     styles['#' + self.id] = value
+  
+  def pseudostyle(self, which):
+    return styles['#%s:%s' % (self.id, which)]
   
   @property
   def width(self):

@@ -13,6 +13,16 @@ class GUINode(SmartNode, CSSNode):
     CSSNode.__init__(self, style)
     self.anchor = (0, 0)
   
+  def order(self):
+    css_evaluate(self.window, self.parent)
+  
+  @property
+  def window(self):
+    parent = self.parent
+    while not isinstance(parent, GUIWindow) and parent is not None:
+      parent = parent.parent
+    return parent
+  
   def get_nodes(self):
     children = self.get_children()
     return [child for child in children if isinstance(child, CSSNode)]
@@ -21,6 +31,12 @@ class GUINode(SmartNode, CSSNode):
     super(GUINode, self).draw(*args, **kwargs)
     self.evaluated_style.background.draw(self)
     self.evaluated_style.border.draw(self)
+  
+  def on_mouse_enter(self):
+    self.add_state('hover')
+  
+  def on_mouse_out(self):
+    self.remove_state('hover')
 
 
 class GUIImage(GUINode):
@@ -88,6 +104,7 @@ img2 = GUIImage(resources_get('stone_pile_1'))
 img3 = resources_get('granite_frame')
 img1.style['border'] = 5, 'solid', 'green'
 img1.style['background-color'] = 'darkgreen'
+img1.pseudostyle('hover')['border-color'] = 'blue'
 img2.style['border'] = 5, 'solid', 'blue'
 img2.style['background-color'] = 'darkblue'
 layout.style['background-image'] = img1.image

@@ -1,4 +1,12 @@
 import operator
+if not hasattr(operator, 'div'):
+  # Python3 compatibility
+  def _div(a, b):
+    if isinstance(a, int) and isinstance(b, int):
+      return operator.floordiv(a, b)
+    else:
+      return operator.truediv(a, b)
+  operator.div = _div
 try:
   from OpenGL import GL
   import OpenGL, OpenGL.arrays.lists

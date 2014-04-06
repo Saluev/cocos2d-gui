@@ -78,7 +78,6 @@ class BorderSide(StylesContainer):
   
   def _Border__draw(self, node):
     if self.__vertices is None:
-      print "Prepating!"
       self.__prepare(node)
     elif not self.__vertices:
       return
@@ -94,6 +93,7 @@ class BorderSide(StylesContainer):
     GL.glDrawArrays(GL.GL_QUADS, 0, self.__vertices_count)
     GL.glPopClientAttrib()
     GL.glPopAttrib()
+
 
 class Border(SidedStylesContainer):
   """Object keeping border CSS properties.
