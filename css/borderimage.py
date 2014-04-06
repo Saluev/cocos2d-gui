@@ -1,19 +1,15 @@
 
-from . import StylesContainer
+from . import expand_sided_value
+from . import styles, StylesContainer
 from . import texturing
 from .texturing import rect_from_sides
 
 
 class BorderImage(StylesContainer):
   prefix = 'image'
-  defaults = {
-    'source': 'none',
-    'slice': 100., # TODO percent class?
-    'width': 1, # NOT pixels => TODO separate pixel length class
-    'outset': 0,
-    'repeat': 'stretch',
-  }
-  subnames = defaults.keys()
+  subnames = [
+    'source', 'slice', 'width', 'outset', 'repeat'
+  ]
   
   # TODO get_as_value, set_to_value
   
@@ -34,20 +30,7 @@ class BorderImage(StylesContainer):
       raise ValueError
   
   def __four_values(self, what):
-    if not isinstance(what, (tuple, list)):
-      return (what,) * 4
-    elif len(what) == 1:
-      return tuple(what) * 4
-    elif len(what) == 2:
-      vertical, horizontal = what
-      return (vertical, horizontal) * 2
-    elif len(what) == 3:
-      top, horizontal, bottom = what
-      return (top, horizontal, bottom, horizontal)
-    elif len(what) == 4:
-      return what
-    else:
-      raise ValueError
+    return expand_sided_value(what)
   
   def __get_image_width(self):
     return self.__four_values(self.width)
@@ -235,15 +218,8 @@ class BorderImage(StylesContainer):
       self.__vertices.extend(v)
       self.__texcoords.extend(tc)
     
-    self.__vertices_count = len(self.__vertices)
-    #self.__vertices  = sum(self.__vertices,  ())
-    #self.__texcoords = sum(self.__texcoords, ())
-    
     # now optimization
-    #import OpenGL.arrays.lists as lists, OpenGL.GL as GL
-    #handler = lists.ListHandler()
-    #self.__vertices  = handler.asArray(self.__vertices,  GL.GL_FLOAT)
-    #self.__texcoords = handler.asArray(self.__texcoords, GL.GL_FLOAT)
+    self.__vertices_count = len(self.__vertices)
     self.__vertices  = texturing.to_buffer(self.__vertices )
     self.__texcoords = texturing.to_buffer(self.__texcoords)
   
@@ -271,3 +247,16 @@ class BorderImage(StylesContainer):
   def _Border__draw(self, node):
     if self.source != 'none':
       self.__draw_image(node)
+
+
+from .border import Border
+Border.subnames.append('image')
+Border.defaults['image'] = BorderImage
+_default_border = styles['*'].border
+_default_border.set_by_subname('image', BorderImage({
+  'source': 'none',
+  'slice': 100., # TODO percent class?
+  'width': 1, # NOT pixels => TODO separate pixel length class
+  'outset': 0,
+  'repeat': 'stretch',
+}))

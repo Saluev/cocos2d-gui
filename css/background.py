@@ -1,21 +1,16 @@
-from . import to_words, from_words, StylesContainer
+from . import to_words, from_words
+from . import styles, Style, StylesContainer
 from .color import Color
 from . import texturing
 
+# TODO support FUCKING MORE features of CSS3 `background` property
 
 class Background(StylesContainer):
   prefix = 'background'
-  defaults = {
-    'color': 'transparent',
-    'position': (0., 0.), # TODO percent class?
-    'size': 'auto',
-    'repeat': 'repeat',
-    'origin': 'padding-box',
-    'clip': 'border-box',
-   #'attachment': 'scroll',
-    'image': 'none',
-  }
-  subnames = defaults.keys()
+  subnames = [
+    'color', 'position', 'size',
+    'repeat', 'origin', 'clip', 'image'
+  ]
   
   def get_as_value(self):
     return tuple(map(self.get_by_subname, self.subnames))
@@ -99,8 +94,16 @@ class Background(StylesContainer):
     texturing.tile(texture, (l, t, bgw, bgh), tile_size)
     # TODO bufferize computations to improve performance
     # using tile(..., action='evaluate')
-    
-    
-    
-    
-    
+
+
+Style.subnames.append('background')
+Style.defaults['background'] = Background
+styles['*'].set_by_subname('background', Background({
+  'color' : 'transparent',
+  'position': (0., 0.), # TODO percent class?
+  'size'  : 'auto',
+  'repeat': 'repeat',
+  'origin': 'padding-box',
+  'clip'  : 'border-box',
+  'image' : 'none'
+}))

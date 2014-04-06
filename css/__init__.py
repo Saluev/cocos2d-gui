@@ -1,11 +1,64 @@
 from collections import defaultdict
 
 def to_words(prop):
-  return prop.split('-')
+  if isinstance(prop, basestring):
+    return prop.split('-')
+  else:
+    # an iterable
+    return list(prop)
 
 def from_words(words):
   words = filter(None, words)
   return '-'.join(words)
+
+def expand_sided_value(value):
+  """Returns 4-tuple with values corresponding
+  to top, right, bottom, and left.
+  
+  Possible inputs:
+  style                  /* One-value syntax   */  E.g. 1em; 
+  vertical horizontal    /* Two-value syntax   */  E.g. 5% auto; 
+  top horizontal bottom  /* Three-value syntax */  E.g. 1em auto 2em; 
+  top right bottom left  /* Four-value syntax  */  E.g. 2px 1em 0 auto; 
+  """
+  if not isinstance(value, (tuple, list)):
+    return (value,) * 4
+  elif len(value) == 1:
+    return tuple(value) * 4
+  elif len(value) == 2:
+    vertical, horizontal = value
+    return (vertical, horizontal) * 2
+  elif len(value) == 3:
+    top, horizontal, bottom = value
+    return (top, horizontal, bottom, horizontal)
+  elif len(value) == 4:
+    return tuple(value)
+  else:
+    raise ValueError('Invalid four-sided value: %r' % value)
+
+def collapse_sided_value(value):
+  """Inverses `expand_sided_value`, returning
+  the most optimal form of four-sided value.
+  """
+  if not isinstance(value, (tuple, list)):
+    return value
+  elif len(value) == 1:
+    return value[0]
+  elif len(value) == 2:
+    if value[0] == value[1]:
+      return value[0]
+    else:
+      return tuple(value)
+  elif len(value) == 3:
+    if value[0] == value[2]:
+      return collapse_sided_value(value[0:2])
+    else:
+      return tuple(value)
+  elif len(value) == 4:
+    if value[1] == value[3]:
+      return collapse_sided_value(value[0:3])
+    else:
+      return tuple(value)
 
 
 class StylesContainer(dict):
@@ -20,9 +73,20 @@ class StylesContainer(dict):
   # default values for properties
   defaults = {}
   
+  def __init__(self, something = None, **kwargs):
+    if isinstance(something, dict):
+      super(StylesContainer, self).__init__(something, **kwargs)
+    else:
+      super(StylesContainer, self).__init__(**kwargs)
+      if something is not None:
+        self.set_to_value(something)
+  
   def __str__(self):
     try:
-      return str(self.get_as_value())
+      as_value = self.get_as_value()
+      if as_value == self:
+        return repr(self)
+      return str(as_value)
     except (NotImplementedError, ValueError):
       return repr(self)
   
@@ -30,35 +94,48 @@ class StylesContainer(dict):
     return '%s(%s)' % (type(self).__name__, dict.__repr__(self))
   
   def get_as_value(self):
-    # abstract
-    raise NotImplementedError
+    """Returns CSS representation of the whole style object.
+    
+    >>> Border().get_as_value()
+    (0, 'none', 'transparent')
+    """
+    raise NotImplementedError # abstract
   
   def set_to_value(self, value):
-    # abstract
-    raise NotImplementedError
+    """Gets style object from representation.
+    
+    >>> b = Border()
+    >>> b = 1, 'solid', 'black'
+    >>> b['border-style']
+    'solid'
+    """
+    raise NotImplementedError # abstract
   
   def on_change(self):
     pass
   
-  def get_default(self, subname):
-    default = self.defaults[subname]
-    if type(default) == type or type(default) == type(lambda:None):
-      return default()
+  def create_default(self, subname):
+    default = self.defaults.get(subname)
+    if hasattr(default, '__call__'):
+      result = default()
+      self.set_by_subname(subname, result)
+      return result
     else:
-      return default
+      return None
   
   def get_by_subname(self, subname):
     if subname not in self.subnames:
-      raise KeyError(subname)
+      raise KeyError(
+        '%r not in %s' % (subname, self.prefix or 'style'))
     subobject = super(StylesContainer, self).get(subname)
     if subobject is None:
-      subobject = self.get_default(subname)
-      self.set_by_subname(subname, subobject)
+      subobject = self.create_default(subname)
     return subobject
   
   def set_by_subname(self, subname, value):
     if subname not in self.subnames:
-      raise KeyError(subname)
+      raise KeyError(
+        '%r not in %s' % (subname, self.prefix or 'style'))
     super(StylesContainer, self).__setitem__(subname, value)
   
   def __getitem__(self, which):
@@ -71,7 +148,7 @@ class StylesContainer(dict):
     subname = words[1]
     subobject = self.get_by_subname(subname)
     if isinstance(subobject, StylesContainer):
-      return subobject[from_words(words[1:])]
+      return subobject[words[1:]]
     elif len(words) == 2:
       return subobject
     else:
@@ -86,10 +163,9 @@ class StylesContainer(dict):
       self.set_to_value(value)
       return
     subname = words[1]
-    # the following also creates a new object if necessary
     currobject = self.get_by_subname(subname)
     if isinstance(currobject, StylesContainer):
-      currobject[from_words(words[1:])] = value
+      currobject[words[1:]] = value
     else:
       self.set_by_subname(subname, value)
     self.on_change()
@@ -99,6 +175,17 @@ class StylesContainer(dict):
       return super(StylesContainer, self).__getattr__(self, which)
     except AttributeError:
       return self.get_by_subname(which)
+  
+  def update(self, other):
+    for key, value in other.items():
+      if isinstance(value, StylesContainer):
+        own = self.get_by_subname(key)
+        if own is None:
+          self.set_by_subname(key, value)
+        else:
+          own.update(value)
+      else:
+        self.set_by_subname(key, value)
 
 
 class SidedStylesContainer(StylesContainer):
@@ -107,49 +194,37 @@ class SidedStylesContainer(StylesContainer):
   # corresponds to CSS specifications.
 
 
-class CumulativeStylesContainer(StylesContainer):
+class _AbstractIndent(SidedStylesContainer):
   def get_as_value(self):
-    #import ipdb; ipdb.set_trace()
     values = map(self.get_by_subname, self.subnames)
-    if len(set(values)) != 1:
-      raise ValueError(
-        'Can\'t return cumulative value `%s`' % self.prefix
-      )
-    return values.pop()
+    if None in values:
+      raise ValueError
+    return collapse_sided_value(values)
   
   def set_to_value(self, value):
-    for subname in self.subnames:
-      self.set_by_subname(subname, value)
+    value = expand_sided_value(value)
+    for i, subname in enumerate(self.subnames):
+      self.set_by_subname(subname, value[i])
 
 
-class Margin(SidedStylesContainer, CumulativeStylesContainer):
+class Margin(_AbstractIndent):
   prefix = 'margin'
-  defaults = defaultdict(int)
 
 
-class Padding(SidedStylesContainer, CumulativeStylesContainer):
+class Padding(_AbstractIndent):
   prefix = 'padding'
-  defaults = defaultdict(int)
-
-
-from border import Border
-from background import Background
 
 
 class Style(StylesContainer):
   defaults = {
-    'width': 'auto',
-    'height': 'auto',
-    'margin': Margin,
+    'margin' : Margin,
     'padding': Padding,
-    'display': 'block',
-    'border': Border,
-    'position': 'static',
-    'left': 'auto',
-    'top': 'auto',
-    'background': Background,
   }
-  subnames = defaults.keys()
+  subnames = [
+    'display', 'position',
+    'left', 'top', 'width', 'height',
+    'margin', 'padding',
+  ]
   
   def get_as_value(self):
     return self
@@ -159,6 +234,21 @@ class Style(StylesContainer):
 
 
 styles = defaultdict(Style)
+
+styles['*'] = Style({
+    'width': 'auto',
+    'height': 'auto',
+    'margin': Margin(0),
+    'padding': Padding(0),
+    'display': 'block',
+    'position': 'static',
+    'left': 'auto',
+    'top': 'auto',
+})
+
+
+from border import Border
+from background import Background
 
 
 def _evaluate_node(node):
@@ -289,6 +379,7 @@ class CSSNode(object):
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style
+    print(style)
   
   @property
   def evaluated_style(self):

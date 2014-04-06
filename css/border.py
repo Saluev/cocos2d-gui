@@ -1,26 +1,21 @@
 # built-in
 from collections import defaultdict
 # css
-from . import to_words, from_words
-from . import StylesContainer, SidedStylesContainer
+from . import to_words, from_words, expand_sided_value, collapse_sided_value
+from . import styles, Style, StylesContainer, SidedStylesContainer
 from . import texturing
 from .color import Color
-from .borderimage import BorderImage
 
 
 class BorderSide(StylesContainer):
   # prefix = one of 'left', 'top', 'right', 'bottom'
-  defaults = {
-    'color': 'transparent',
-    'style': 'none',
-    'width': 0,
-    'radius': 0,
-  }
-  subnames = defaults.keys()
+  subnames = [
+    'color', 'style', 'width', #'radius'
+  ]
   
   def __init__(self, side, *args, **kwargs):
     super(BorderSide, self).__init__(*args, **kwargs)
-    assert(side in ('left', 'top', 'right', 'bottom'))
+    assert(side in Border.sides)
     self.prefix = side
     self.__vertices = None
   
@@ -109,21 +104,20 @@ class Border(SidedStylesContainer):
     'top'   : lambda: BorderSide('top'   ),
     'right' : lambda: BorderSide('right' ),
     'bottom': lambda: BorderSide('bottom'),
-    'image': BorderImage,
   }
   sides = SidedStylesContainer.subnames
-  subnames = defaults.keys()
+  subnames = sides + ['image']
   
   def get_as_value(self):
     result = []
     for subname in ('width', 'style', 'color'):
-      result.append(self[from_words((self.prefix, subname))])
+      value = self[(self.prefix, subname)]
+      result.append(collapse_sided_value(value))
     return tuple(result)
   
   def set_to_value(self, value):
     for side in self.sides:
-      which = from_words((self.prefix, side))
-      self[which] = value
+      self.get_by_subname(side).set_to_value(value)
   
   def __getitem__(self, which):
     try:
@@ -136,12 +130,9 @@ class Border(SidedStylesContainer):
     assert(modifier not in self.subnames)
     options = []
     for side in self.sides:
-      option_name = from_words((self.prefix, side, modifier))
-      options.append(self[option_name])
-    if len(set(options)) > 1:
-      return tuple(options)
-    else:
-      return options.pop()
+      option = self.get_by_subname(side)[(side, modifier)]
+      options.append(option)
+    return collapse_sided_value(options)
   
   def __setitem__(self, which, value):
     try:
@@ -152,21 +143,25 @@ class Border(SidedStylesContainer):
     assert(len(words) == 2)
     modifier = words[1]
     assert(modifier not in self.subnames)
-    for side in self.sides:
-      which = from_words((self.prefix, side, modifier))
-      self[which] = value # TODO what if the value is a tuple?
+    values = expand_sided_value(value)
+    for side, value in zip(self.sides, values):
+      self.get_by_subname(side)[(side, modifier)] = value
   
   def draw(self, node):
-    if self.image.source != 'none':
+    if self.image.source not in (None, 'none'):
       self.image.__draw(node)
     else:
       self.left  .__draw(node)
       self.top   .__draw(node)
       self.right .__draw(node)
       self.bottom.__draw(node)
-    
-  
-  
 
 
+_default_border = Border((0, 'none', 'transparent'))
+Style.subnames.append('border')
+Style.defaults['border'] = Border
+styles['*'].set_by_subname('border', _default_border)
+
+
+from .borderimage import BorderImage
 
