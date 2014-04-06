@@ -17,6 +17,8 @@ class VerticalLayout(GUILayout):
   
   def get_content_size(self):
     children = self.get_children()
+    if not children:
+      return (0, 0)
     child_widths  = (child.width  for child in children)
     child_heights = (child.height for child in children)
     width  = max(child_widths )

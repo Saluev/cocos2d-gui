@@ -226,7 +226,8 @@ def _evaluate_node(node):
 
 
 def evaluate(window, element = None):
-  element = element or window
+  if element is None:
+    element = window
   children = element.get_nodes()
   for child in children:
     assert(child.parent is element)

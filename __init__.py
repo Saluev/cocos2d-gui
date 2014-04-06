@@ -19,8 +19,8 @@ class GUINode(SmartNode, CSSNode):
   
   def draw(self, *args, **kwargs):
     super(GUINode, self).draw(*args, **kwargs)
-    self.style.border.draw(self)
     self.style.background.draw(self)
+    self.style.border.draw(self)
 
 
 class GUIImage(GUINode):
@@ -75,3 +75,28 @@ class GUIWindow(SmartLayer, CSSNode):
     GL.glPopMatrix()
 
 
+# a simple test
+from ..resources import get as resources_get
+from .layouts import VerticalLayout
+window = GUIWindow()
+layout = VerticalLayout()
+layout.style['padding'] = 10
+layout.style['border']  = 17, 'solid', '#000000'
+layout.style['background'] = '#DDDDDD'
+img1 = GUIImage(resources_get('grassland'))
+img2 = GUIImage(resources_get('stone_pile_1'))
+img3 = resources_get('granite_frame')
+img1.style['border'] = 5, 'solid', 'green'
+img1.style['background-color'] = 'darkgreen'
+img2.style['border'] = 5, 'solid', 'blue'
+img2.style['background-color'] = 'darkblue'
+layout.style['background-image'] = img1.image
+#layout.style['background-size'] = 'contain'
+layout.style['border-image-source'] = img3
+layout.style['border-image-slice'] = ('fill', 17)
+layout.style['border-image-repeat'] = 'repeat'
+#layout.add(img1)
+#layout.add(img2)
+window.add(layout)
+window.position = (50, 50)
+window.order()
