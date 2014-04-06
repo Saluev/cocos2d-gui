@@ -1,8 +1,9 @@
 # built-in
 from collections import defaultdict
 # css
-from . import to_words, from_words, expand_sided_value, collapse_sided_value
-from . import styles, Style, StylesContainer, SidedStylesContainer
+from .utility import to_words, from_words
+from .utility import expand_sided_value, collapse_sided_value
+from .style import styles, Style, StylesContainer, SidedStylesContainer
 from . import texturing
 from .color import Color
 
@@ -161,7 +162,3 @@ _default_border = Border((0, 'none', 'transparent'))
 Style.subnames.append('border')
 Style.defaults['border'] = Border
 styles['*'].set_by_subname('border', _default_border)
-
-
-from .borderimage import BorderImage
-

@@ -1,5 +1,5 @@
-from . import to_words, from_words
-from . import styles, Style, StylesContainer
+from .utility import to_words, from_words
+from .style import styles, Style, StylesContainer
 from .color import Color
 from . import texturing
 

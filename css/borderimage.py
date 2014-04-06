@@ -1,6 +1,6 @@
 
-from . import expand_sided_value
-from . import styles, StylesContainer
+from .utility import expand_sided_value
+from .style import styles, StylesContainer
 from . import texturing
 from .texturing import rect_from_sides
 
