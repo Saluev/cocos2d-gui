@@ -37,7 +37,7 @@ class BorderImage(StylesContainer):
     if not isinstance(what, (tuple, list)):
       return (what,) * 4
     elif len(what) == 1:
-      return what * 4
+      return tuple(what) * 4
     elif len(what) == 2:
       vertical, horizontal = what
       return (vertical, horizontal) * 2
@@ -53,7 +53,12 @@ class BorderImage(StylesContainer):
     return self.__four_values(self.width)
   
   def __get_image_slice(self):
-    return self.__four_values(self.slice)
+    slice = self.slice
+    if isinstance(slice, tuple) and 'fill' in slice:
+      slice = filter('fill'.__ne__, slice) # removing 'fill'
+      return (True, ) + self.__four_values(slice)
+    else:
+      return (False,) + self.__four_values(slice)
   
   def __evaluate_image_width(self, node):
     # see developer.mozilla.org/en-US/docs/Web/CSS/border-image-width
@@ -76,13 +81,14 @@ class BorderImage(StylesContainer):
     assert(self.source != 'none')
     image = self.source
     image_slice = self.__get_image_slice()
+    fill, image_slice = image_slice[0], image_slice[1:]
     def evaluate_slice(sl, image_size):
       if isinstance(sl, float):
         return min(image_size, int(image_size * sl / 100.))
       elif isinstance(sl, int):
         return min(image_size, sl)
       raise ValueError
-    slice = [
+    slice = [ fill,
       evaluate_slice(image_slice[0], image.height), # top
       evaluate_slice(image_slice[1], image.width ), # right
       evaluate_slice(image_slice[2], image.height), # bottom
@@ -101,10 +107,11 @@ class BorderImage(StylesContainer):
     width = self.__evaluate_image_width(node)
     slice = self.__evaluate_image_slice(node)
     
+    fill = slice[0]
     iw, ih = image.width, image.height
     hrepeat, vrepeat = repeat
     wt, wr, wb, wl = width
-    st, sr, sb, sl = map(float, slice)
+    st, sr, sb, sl = map(float, slice[1:])
     
     # dimensions of the central part of an image
     scw = iw - sr - sl
@@ -201,6 +208,17 @@ class BorderImage(StylesContainer):
         )
       },
     }
+    if fill:
+      tiling_arguments['center'] = {
+        'rect': (left + wl, top + wt, h_bar_width, v_bar_height),
+         # size and height are resized like those of the
+         # top and left image slices, respectively:
+        'tile_size': (h_tile_width(wt), v_tile_height(wl)),
+        'texcoords': rect_from_sides(
+          left = sl / iw, top = 1. - st / ih,
+          right = 1. - sr / iw, bottom = sb / ih
+        )
+      }
     
     texture = image.get_texture()
     self.__vertices  = []
