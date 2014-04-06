@@ -123,21 +123,27 @@ class BorderImage(StylesContainer):
     
     # tile sizes
     if hrepeat == 'stretch':
-      h_tile_width  = lambda th: h_bar_width
+      h_tile_top_width = h_tile_bottom_width = h_bar_width
     elif hrepeat == 'repeat':
-      h_tile_width  = lambda th: th
+      h_tile_top_width    = int(scw * (wt / st))
+      h_tile_bottom_width = int(scw * (wb / sb))
     elif hrepeat == 'round':
       h_tile_width = lambda th: h_bar_width / round(h_bar_width / float(th))
+      h_tile_top_width    = h_tile_width(wt)
+      h_tile_bottom_width = h_tile_width(wb)
     else:
       raise ValueError(
         'Invalid value for background-image-repeat: %r' % hrepeat)
     
     if vrepeat == 'stretch':
-      v_tile_height = lambda tw: v_bar_height
+      v_tile_left_height = v_tile_right_height = v_bar_height
     elif vrepeat == 'repeat':
-      v_tile_height = lambda tw: tw
+      v_tile_left_height  = int(sch * (wl / sl))
+      v_tile_right_height = int(sch * (wr / sr))
     elif vrepeat == 'round':
       v_tile_height = lambda tw: v_bar_height / round(v_bar_height / float(tw))
+      v_tile_left_height  = v_tile_height(wl)
+      v_tile_right_height = v_tile_height(wr)
     else:
       raise ValueError(
         'Invalid value for background-image-repeat: %r' % hrepeat)
@@ -153,7 +159,7 @@ class BorderImage(StylesContainer):
       },
       'top': {
         'rect': (left + wl, top, h_bar_width, wt),
-        'tile_size': (h_tile_width(wt), wt),
+        'tile_size': (h_tile_top_width, wt),
         'texcoords': rect_from_sides(
           left = sl / iw, top = 1.,
           right = 1. - sr / iw, bottom = 1 - st / ih
@@ -169,7 +175,7 @@ class BorderImage(StylesContainer):
       },
       'left': {
         'rect': (left, top + wt, wl, v_bar_height),
-        'tile_size': (wl, v_tile_height(wl)),
+        'tile_size': (wl, v_tile_left_height),
         'texcoords': rect_from_sides(
           left = 0., top = 1. - st / ih,
           right = sl / iw, bottom = sb / ih
@@ -177,7 +183,7 @@ class BorderImage(StylesContainer):
       },
       'right': {
         'rect': (right - wr, top + wt, wr, v_bar_height),
-        'tile_size': (wr, v_tile_height(wr)),
+        'tile_size': (wr, v_tile_right_height),
         'texcoords': rect_from_sides(
           left = 1. - sr / iw, top = 1. - st / ih,
           right = 1., bottom = sb / ih
@@ -193,7 +199,7 @@ class BorderImage(StylesContainer):
       },
       'bottom': {
         'rect': (left + wl, bottom - wb, h_bar_width, wb),
-        'tile_size': (h_tile_width(wb), wb),
+        'tile_size': (h_tile_bottom_width, wb),
         'texcoords': rect_from_sides(
           left = sl / iw, top = sb/ ih,
           right = 1. - sr / iw, bottom = 0.
@@ -213,7 +219,7 @@ class BorderImage(StylesContainer):
         'rect': (left + wl, top + wt, h_bar_width, v_bar_height),
          # size and height are resized like those of the
          # top and left image slices, respectively:
-        'tile_size': (h_tile_width(wt), v_tile_height(wl)),
+        'tile_size': (h_tile_top_width, v_tile_left_height),
         'texcoords': rect_from_sides(
           left = sl / iw, top = 1. - st / ih,
           right = 1. - sr / iw, bottom = sb / ih
