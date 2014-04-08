@@ -44,7 +44,6 @@ class CSSNode(object):
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style
-    print(style)
   
   @property
   def evaluated_style(self):
@@ -87,6 +86,8 @@ class CSSNode(object):
     raise NotImplementedError
   
   def get_content_size(self):
+    if 'width' in self.style and 'height' in self.style:
+      return (self.style['width'], self.style['height']) # TODO to_px()
     raise NotImplementedError
   
   def get_nodes(self):

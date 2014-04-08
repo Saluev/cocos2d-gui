@@ -75,7 +75,7 @@ class BorderSide(StylesContainer):
   def _Border__draw(self, node):
     if self.__vertices is None:
       self.__prepare(node)
-    elif not self.__vertices:
+    if not self.__vertices:
       return
     from OpenGL import GL
     GL.glPushAttrib(GL.GL_CURRENT_BIT | GL.GL_ENABLE_BIT)
