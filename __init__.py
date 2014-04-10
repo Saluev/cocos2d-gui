@@ -82,13 +82,6 @@ class GUIWindow(SmartLayer, CSSNode):
   def get_content_size(self):
     child = self.get_children()[0]
     return (child.width, child.height)
-  
-  def visit(self):
-    GL.glPushMatrix()
-    GL.glTranslatef(0, cocos.director.director.window.height, 0)
-    GL.glScalef(1, -1, 1)
-    super(GUIWindow, self).visit()
-    GL.glPopMatrix()
 
 
 # a simple test
@@ -105,7 +98,7 @@ img2 = GUIImage(resources_get('stone_pile_1'))
 img3 = resources_get('granite_frame')
 img1.style['border'] = 5, 'solid', 'green'
 img1.style['background-color'] = 'darkgreen'
-img1.pseudostyle('hover')['border-right-color'] = 'blue'
+img1.pseudostyle('hover')['border-bottom-color'] = 'blue'
 img2.style['border'] = 5, 'solid', 'blue'
 img2.style['background-color'] = 'darkblue'
 layout.style['background-image'] = img1.image

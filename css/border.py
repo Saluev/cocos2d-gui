@@ -58,11 +58,11 @@ class BorderSide(StylesContainer):
       vertices = [(r, t), (r, b),
         (r - width, b - border.bottom.width),
         (r - width, t + border.top   .width)]
-    elif side == 'top':
+    elif side == 'bottom':
       vertices = [(l, t), (r, t),
         (r - border.right.width, t + width),
         (l + border.left .width, t + width)]
-    elif side == 'bottom':
+    elif side == 'top':
       vertices = [(l, b), (r, b),
         (r - border.right.width, b - width),
         (l + border.left .width, b - width)]
@@ -71,24 +71,6 @@ class BorderSide(StylesContainer):
     self.__color = color
     self.__vertices_count = len(vertices)
     self.__vertices = texturing.to_buffer(vertices)
-  
-  def _Border__draw(self, node):
-    if self.__vertices is None:
-      self.__prepare(node)
-    if not self.__vertices:
-      return
-    from OpenGL import GL
-    GL.glPushAttrib(GL.GL_CURRENT_BIT | GL.GL_ENABLE_BIT)
-    GL.glColor3ubv(self.__color)
-    #GL.glBegin(GL.GL_QUADS)
-    #map(GL.glVertex2fv, self.__vertices)
-    #GL.glEnd()
-    GL.glPushClientAttrib(GL.GL_CLIENT_ALL_ATTRIB_BITS)
-    GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
-    GL.glVertexPointer(2, GL.GL_FLOAT, 0, self.__vertices)
-    GL.glDrawArrays(GL.GL_QUADS, 0, self.__vertices_count)
-    GL.glPopClientAttrib()
-    GL.glPopAttrib()
 
 
 class Border(SidedStylesContainer):
@@ -147,15 +129,6 @@ class Border(SidedStylesContainer):
     values = expand_sided_value(value)
     for side, value in zip(self.sides, values):
       self.get_by_subname(side)[(side, modifier)] = value
-  
-  def draw(self, node):
-    if self.image.source not in (None, 'none'):
-      self.image.__draw(node)
-    else:
-      self.left  .__draw(node)
-      self.top   .__draw(node)
-      self.right .__draw(node)
-      self.bottom.__draw(node)
 
 
 _default_border = Border((0, 'none', 'transparent'))

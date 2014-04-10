@@ -61,3 +61,26 @@ def collapse_sided_value(value):
       return tuple(value)
   else:
     raise ValueError('Invalid expanded four-sided value: %r' % value)
+
+def expand_hv_value(value):
+  if not isinstance(value, (tuple, list)):
+    return (value,) * 2
+  elif len(value) == 1:
+    return tuple(value) * 2
+  elif len(value) == 2:
+    return tuple(value)
+  else:
+    raise ValueError('Invalid collapsed hv value: %r' % value)
+
+def collapse_hv_value(value):
+  if not isinstance(value, (tuple, list)):
+    return value
+  elif len(value) == 1:
+    return value[0]
+  elif len(value) == 2:
+    if value[0] == value[1]:
+      return value[0]
+    else:
+      return tuple(value)
+  else:
+    raise ValueError('Invalid expanded hv value: %r' % value)

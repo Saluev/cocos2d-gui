@@ -8,6 +8,7 @@ from style import styles, Style
 from node import CSSNode
 # importing extensions
 import border, borderimage, background
+import rendering
 
 def evaluate(window, element = None):
   if element is None:

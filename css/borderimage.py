@@ -1,5 +1,5 @@
 
-from .utility import expand_sided_value
+from .utility import expand_sided_value, expand_hv_value
 from .style import styles, StylesContainer
 from . import texturing
 from .texturing import rect_from_sides
@@ -18,35 +18,21 @@ class BorderImage(StylesContainer):
     self.__vertices  = None
     self.__texcoords = None
   
-  ## utility functions ##
-  def __two_values(self, what):
-    if not isinstance(what, (tuple, list)):
-      return (what,) * 2
-    elif len(what) == 1:
-      return what * 2
-    elif len(what) == 2:
-      return what
-    else:
-      raise ValueError
-  
-  def __four_values(self, what):
-    return expand_sided_value(what)
-  
   def __get_image_width(self):
-    return self.__four_values(self.width)
+    return expand_sided_value(self.width)
   
   def __get_image_slice(self):
     slice = self.slice
     if isinstance(slice, (tuple, list)) and 'fill' in slice:
       slice = filter(lambda s: s != 'fill', slice) # removing 'fill'
-      return (True, ) + self.__four_values(slice)
+      return (True, ) + expand_sided_value(slice)
     else:
-      return (False,) + self.__four_values(slice)
+      return (False,) + expand_sided_value(slice)
   
   def __evaluate_image_width(self, node):
     # see developer.mozilla.org/en-US/docs/Web/CSS/border-image-width
     image_width = self.__get_image_width()
-    border_width = self.__four_values(node.evaluated_style['border-width'])
+    border_width = expand_sided_value(node.evaluated_style['border-width'])
     def evaluate_width(iw, bw):
       if isinstance(iw, int):      # ratio
         return iw * bw
@@ -86,15 +72,15 @@ class BorderImage(StylesContainer):
     right, bottom = left + box_width, top + box_height
     
     image = self.source
-    repeat = self.__two_values(self.repeat)
+    repeat = expand_hv_value(self.repeat)
     width = self.__evaluate_image_width(node)
     slice = self.__evaluate_image_slice(node)
     
     fill = slice[0]
     iw, ih = image.width, image.height
     hrepeat, vrepeat = repeat
-    wt, wr, wb, wl = width
-    st, sr, sb, sl = map(float, slice[1:])
+    wb, wr, wt, wl = width
+    sb, sr, st, sl = map(float, slice[1:])
     
     # dimensions of the central part of an image
     scw = iw - sr - sl
@@ -225,28 +211,6 @@ class BorderImage(StylesContainer):
   
   def on_change(self):
     self.__vertices = self.__texcoords = None
-  
-  def __draw_image(self, node):
-    if self.__vertices is None or self.__texcoords is None:
-      # TODO check whether node is the same
-      self.__prepare(node)
-    texture = self.source.get_texture()
-    from OpenGL import GL
-    GL.glPushAttrib(GL.GL_ENABLE_BIT | GL.GL_TEXTURE_BIT)
-    GL.glEnable(texture.target)
-    GL.glBindTexture(texture.target, texture.id)
-    GL.glPushClientAttrib(GL.GL_CLIENT_ALL_ATTRIB_BITS)
-    GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
-    GL.glEnableClientState(GL.GL_TEXTURE_COORD_ARRAY)
-    GL.glVertexPointer  (2, GL.GL_FLOAT, 0, self.__vertices )
-    GL.glTexCoordPointer(2, GL.GL_FLOAT, 0, self.__texcoords)
-    GL.glDrawArrays(GL.GL_QUADS, 0, self.__vertices_count)
-    GL.glPopClientAttrib()
-    GL.glPopAttrib()
-  
-  def _Border__draw(self, node):
-    if self.source != 'none':
-      self.__draw_image(node)
 
 
 from .border import Border
