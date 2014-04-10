@@ -37,18 +37,18 @@ class BorderSide(StylesContainer):
     border_box = node.border_box
     border = node.evaluated_style.border
     if self.width <= 0 or \
-       self.style == 'none' or \
+       self.style in ('none', 'hidden') or \
        self.color == 'transparent': # TODO self.color.is_transparent()
       self.__vertices = []
       return
-    if self.style != 'solid':
+    if self.style not in ('solid', 'hidden', 'inset', 'outset'):
       raise NotImplementedError(
         "%s border style is not yet "
         "implemented" % self.style.title()
       )
     x, y, w, h = border_box
     l, t, r, b = x, y, x + w, y + h
-    width, color = self.width, Color(self.color)
+    width, style, color = self.width, self.style, Color(self.color)
     side = self.prefix
     if side == 'left':
       vertices = [(l, t), (l, b), 
@@ -69,6 +69,13 @@ class BorderSide(StylesContainer):
     else:
       assert False, '`BorderSide` class seems to be invalid.'
     self.__color = color
+    # lightening or darkening color if inset or outset
+    if (style, side) in [('inset',  'left' ), ('inset',  'top'   ),
+                         ('outset', 'right'), ('outset', 'bottom')]:
+      self.__color = color.darken()
+    if (style, side) in [('inset',  'right'), ('inset',  'bottom'),
+                         ('outset', 'left' ), ('outset', 'top'   )]:
+      self.__color = color.lighten()
     self.__vertices_count = len(vertices)
     self.__vertices = texturing.to_buffer(vertices)
 
