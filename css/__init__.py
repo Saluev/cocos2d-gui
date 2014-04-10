@@ -26,14 +26,10 @@ def _evaluate_node(node):
   left = 0 if left == 'auto' else left
   top  = 0 if top  == 'auto' else top
   position = style['position']
-  if position == 'static':
-    position_transform = lambda x, y: (x, y)
-  elif position == 'relative':
-    position_transform = lambda x, y: (x + left, y + top)
-  elif position == 'absolute':
-    position_transform = lambda x, y: (left, top)
+  if position == 'absolute':
+    raise NotImplementedError
   # TODO fixed?
-  margin_offset  = [0, 0]
+  margin_offset  = [left, top]
   border_offset  = [margin_offset[0] + style['margin-left'],
                     margin_offset[1] + style['margin-top' ]]
   padding_offset = [border_offset[0] + style['border-left-width'],
@@ -78,7 +74,6 @@ def _evaluate_node(node):
       box[3] += dh
   info = {
     'node': node,
-    'positioning': position_transform,
     'margin_box' : margin_box,
     'border_box' : border_box,
     'padding_box': padding_box,

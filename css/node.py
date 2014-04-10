@@ -16,8 +16,9 @@ class CSSNode(object):
     self.order()
   
   def add_state(self, state):
-    self.state.add(state)
-    self.clear()
+    if state not in self.state:
+      self.state.add(state)
+      self.clear()
   
   def remove_state(self, state):
     if state in self.state:
@@ -40,7 +41,6 @@ class CSSNode(object):
     applicable_styles.append(id_query)
     applicable_styles.extend(id_query + ':' + pseudo for pseudo in self.state)
     # now collecting all together
-    print(applicable_styles)
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style
@@ -101,13 +101,13 @@ class CSSNode(object):
       setattr(self, key, value)
   
   def set_position(self, x, y):
-    position = self.positioning(x, y)
+    position = (x, y)
     if hasattr(self, 'position'):
       self.position = position
-    self.margin_box  = _shift_box(self.margin_box , position)
-    self.padding_box = _shift_box(self.padding_box, position)
-    self.border_box  = _shift_box(self.border_box , position)
-    self.content_box = _shift_box(self.content_box, position)
+    #self.margin_box  = _shift_box(self.margin_box , position)
+    #self.padding_box = _shift_box(self.padding_box, position)
+    #self.border_box  = _shift_box(self.border_box , position)
+    #self.content_box = _shift_box(self.content_box, position)
 
 
 def _shift_box(box, xy):

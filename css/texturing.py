@@ -70,8 +70,12 @@ def tile(texture, rect, tile_size=None,
     raise ValueError('Invalid action for `tile`: %r' % action)
   if tile_size is None:
     tile_size = texture.width, texture.height
-  l, t, bgw, bgh = rect
   tilew, tileh = tile_size
+  if tilew <= 0 or tileh <= 0:
+    return (), ()
+  
+  l, t, bgw, bgh = rect
+  
   
   if not __debug__:
     raise NotImplementedError(

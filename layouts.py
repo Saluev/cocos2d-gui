@@ -5,15 +5,17 @@ class GUILayout(GUINode):
   def __init__(self, spacing=5):
     super(GUILayout, self).__init__()
     self.spacing = spacing
+    self.__nodes = [] # TODO move this whole system to GUINode
   
   def __len__(self):
     return len(self.children)
   
+  def get_children(self):
+    return self.__nodes
+  
   def add(self, child, *args, **kwargs):
     super(GUILayout, self).add(child, *args, **kwargs)
-  
-  def add(self, *args, **kwargs):
-    super(GUILayout, self).add(*args, **kwargs)
+    self.__nodes.append(child)
     nodes = self.get_nodes()
     nodes_count = len(nodes)
     for i, node in enumerate(nodes):
@@ -50,3 +52,26 @@ class VerticalLayout(GUILayout):
       yoffset += box[3]
       yoffset += self.spacing
 
+
+class HorizontalLayout(GUILayout):
+  
+  def get_content_size(self):
+    children = self.get_children()
+    if not children:
+      return (0, 0)
+    child_widths  = (child.width  for child in children)
+    child_heights = (child.height for child in children)
+    width  = sum(child_widths ) + self.spacing * (len(children) - 1)
+    height = max(child_heights)
+    return (width, height)
+  
+  def apply_style(self, **options):
+    super(HorizontalLayout, self).apply_style(**options)
+    # now place children properly
+    children = self.get_children()
+    xoffset, yoffset = self.content_box[:2]
+    for child in children:
+      box = child.margin_box
+      child.set_position(xoffset, yoffset)
+      xoffset += box[2]
+      xoffset += self.spacing

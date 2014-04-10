@@ -29,8 +29,11 @@ class GUINode(SmartNode, CSSNode):
   
   def draw(self, *args, **kwargs):
     super(GUINode, self).draw(*args, **kwargs)
+    GL.glPushMatrix()
+    self.transform()
     self.evaluated_style.background.draw(self)
     self.evaluated_style.border.draw(self)
+    GL.glPopMatrix()
   
   def on_mouse_enter(self):
     self.add_state('hover')
@@ -39,7 +42,7 @@ class GUINode(SmartNode, CSSNode):
     self.remove_state('hover')
 
 
-class GUIImage(GUINode):
+class GUIImage(GUINode): # TODO: call it just Image
   def __init__(self, image, style = None):
     super(GUIImage, self).__init__(style)
     self.image = image
@@ -49,12 +52,20 @@ class GUIImage(GUINode):
   def get_content_size(self):
     return (self.image.width, self.image.height)
   
-  def visit(self):
-    # TODO transform coordinates or draw image manually
-    cx, cy = self.content_box[:2]
-    sx, sy = self.position
-    self.sprite.position = (cx - sx, cy - sy)
-    super(GUIImage, self).visit()
+  def apply_style(self, **options):
+    super(GUIImage, self).apply_style(**options)
+    self.sprite.position = self.content_box[:2]
+
+
+class Label(GUINode):
+  def __init__(self, style = None, *args, **kwargs):
+    super(Label, self).__init__(style)
+    self.label = cocos.text.Label(*args, **kwargs)
+    self.add(self.label)
+  
+  def apply_style(self, **options):
+    super(Label, self).apply_style(**options)
+    self.label.position = self.content_box[:2]
 
 
 class GUIWindow(SmartLayer, CSSNode):
@@ -82,9 +93,11 @@ class GUIWindow(SmartLayer, CSSNode):
   def get_content_size(self):
     child = self.get_children()[0]
     return (child.width, child.height)
+  
 
 
 # a simple test
+#"""
 from ..resources import get as resources_get
 from .layouts import VerticalLayout
 from .buttons import Button
@@ -117,4 +130,4 @@ layout.add(img2)
 layout.add(btn)
 window.add(layout)
 window.attach = (-50, -50)
-window.order()
+window.order()#"""
