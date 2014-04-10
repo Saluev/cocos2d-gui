@@ -88,7 +88,8 @@ class GUIWindow(SmartLayer, CSSNode):
 from ..resources import get as resources_get
 from .layouts import VerticalLayout
 from .buttons import Button
-window = GUIWindow()
+from .windows import AttachedWindow
+window = AttachedWindow()
 layout = VerticalLayout()
 layout.style['padding'] = 10
 layout.style['border']  = 17, 'solid', '#000000'
@@ -99,7 +100,8 @@ img3 = resources_get('granite_frame')
 img1.style['border'] = 5, 'solid', 'green'
 img1.style['background-color'] = 'darkgreen'
 img1.pseudostyle('hover')['border-bottom-color'] = 'blue'
-img2.style['border'] = 5, 'solid', 'blue'
+img1.style['border-style'] = 'inset'
+img2.style['border'] = 5, 'outset', 'blue'
 img2.style['background-color'] = 'darkblue'
 layout.style['background-image'] = img1.image
 #layout.style['background-size'] = 'contain'
@@ -114,5 +116,5 @@ layout.add(img1)
 layout.add(img2)
 layout.add(btn)
 window.add(layout)
-window.position = (50, 50)
+window.attach = (-50, -50)
 window.order()
