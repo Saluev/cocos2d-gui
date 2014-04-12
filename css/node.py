@@ -1,3 +1,4 @@
+from common.utility import mutualmethod, mutualproperty
 from .style import styles, Style
 
 
@@ -6,9 +7,9 @@ class CSSNode(object):
   def __init__(self, style = None):
     self.id = '%x' % id(self)
     style = style or Style()
-    self.style = style
+    self.style.update(style)
     self.__evaluated_style = None
-    self.state = set()
+    self.state = []
     self.positioning = lambda x, y: (x, y)
   
   def clear(self):
@@ -17,7 +18,7 @@ class CSSNode(object):
   
   def add_state(self, state):
     if state not in self.state:
-      self.state.add(state)
+      self.state.append(state)
       self.clear()
   
   def remove_state(self, state):
@@ -41,6 +42,7 @@ class CSSNode(object):
     applicable_styles.append(id_query)
     applicable_styles.extend(id_query + ':' + pseudo for pseudo in self.state)
     # now collecting all together
+    from pprint import pprint; pprint(applicable_styles)
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style
@@ -58,16 +60,25 @@ class CSSNode(object):
   def evaluated_style(self, style):
     self.__evaluated_style = style
   
-  @property
+  @mutualproperty
   def style(self):
-    return styles['#' + self.id]
+    if isinstance(self, CSSNode):
+      return styles['#' + self.id]
+    elif isinstance(self, type):
+      return styles['.' + self.__name__]
+    else:
+      raise RuntimeError(
+        'Can only set styles for nodes and classes!')
   
-  @style.setter
-  def style(self, value):
-    styles['#' + self.id] = value
-  
+  @mutualmethod
   def pseudostyle(self, which):
-    return styles['#%s:%s' % (self.id, which)]
+    if isinstance(self, CSSNode):
+      return styles['#%s:%s' % (self.id, which)]
+    elif isinstance(self, type):
+      return styles['.%s:%s' % (self.__name__, which)]
+    else:
+      raise RuntimeError(
+        'Can apply pseudostyles only to nodes and classes!')
   
   @property
   def width(self):

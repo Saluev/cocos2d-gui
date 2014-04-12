@@ -7,7 +7,7 @@ __all__ = [
 from style import styles, Style
 from node import CSSNode
 # importing extensions
-import border, borderimage, background
+import border, borderimage, background, font
 import rendering
 
 def evaluate(window, element = None):
