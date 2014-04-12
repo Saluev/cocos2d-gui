@@ -73,6 +73,7 @@ _named_colors = {
   'Lightcyan': 'E0FFFF',
   'Lightgoldenrodyellow': 'FAFAD2',
   'Lightgreen': '90EE90',
+  'Lightgray': 'D3D3D3',  # because I think it is correct
   'Lightgrey': 'D3D3D3',
   'Lightpink': 'FFB6C1',
   'Lightsalmon': 'FFA07A',

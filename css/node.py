@@ -12,25 +12,24 @@ class CSSNode(object):
     self.state = []
     self.positioning = lambda x, y: (x, y)
   
-  def clear(self):
+  def __dirty(self):
     self.__evaluated_style = None
     self.order()
   
   def add_state(self, state):
     if state not in self.state:
       self.state.append(state)
-      self.clear()
+      self.__dirty()
   
   def remove_state(self, state):
     if state in self.state:
       self.state.remove(state)
-      self.clear()
+      self.__dirty()
   
   def evaluate_style(self):
     id_query = '#' + self.id
     classes = type(self).mro()
-    class_names   = (cls.__name__ for cls in classes if issubclass(cls, CSSNode))
-    class_queries = map('.'.__add__, class_names)[::-1]
+    class_queries = ['.' + cls.__name__ for cls in classes if issubclass(cls, CSSNode)][::-1]
     style = Style()
     # common stylesheet
     applicable_styles = ['*']
@@ -110,6 +109,7 @@ class CSSNode(object):
       options.pop('node')
     for key, value in options.iteritems():
       setattr(self, key, value)
+    self.evaluated_style.apply_to(self)
   
   def set_position(self, x, y):
     position = (x, y)

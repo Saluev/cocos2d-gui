@@ -15,12 +15,19 @@ class StylesContainer(dict):
   defaults = {}
   
   def __init__(self, something = None, **kwargs):
+    self.node = None
     if isinstance(something, dict):
       super(StylesContainer, self).__init__(something, **kwargs)
     else:
       super(StylesContainer, self).__init__(**kwargs)
       if something is not None:
         self.set_to_value(something)
+  
+  def apply_to(self, node):
+    self.node = node
+    for subitem in self.values():
+      if isinstance(subitem, StylesContainer):
+        subitem.apply_to(node)
   
   def __str__(self):
     try:

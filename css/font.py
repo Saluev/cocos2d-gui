@@ -3,6 +3,9 @@ from .style import styles, Style, StylesContainer
 from .node import CSSNode
 from .color import Color
 
+# TODO letter-spacing (simple Letter class, use pyglet's
+# `document.style['kerning']`)
+
 _font_sizes = { # text to points
   'large'  : 13.5,
   'larger' : 14,
@@ -30,6 +33,8 @@ class Font(StylesContainer):
     'size',
     'family',
   ]
+  
+  # TODO set_to_value, get_as_value
   
   def __evaluate_size(self, node):
     size = self.size
@@ -94,6 +99,7 @@ class Font(StylesContainer):
   # TODO TODO TODO Find a nice way to call this function.
   # Change `CSSNode.apply_style`, maybe?
   def apply_to(self, node):
+    super(Font, self).apply_to(node)
     if not hasattr(node, 'text_objects'):
       return # nothing to change
     family = self.__evaluate_family(node)

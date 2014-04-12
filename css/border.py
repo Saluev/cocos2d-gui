@@ -4,8 +4,6 @@ from collections import defaultdict
 from .utility import to_words, from_words
 from .utility import expand_sided_value, collapse_sided_value
 from .style import styles, Style, StylesContainer, SidedStylesContainer
-from . import texturing
-from .color import Color
 
 
 class BorderSide(StylesContainer):
@@ -31,53 +29,6 @@ class BorderSide(StylesContainer):
     self.set_by_subname('width', width)
     self.set_by_subname('style', style)
     self.set_by_subname('color', color)
-  
-  ## drawing functions ##
-  def __prepare(self, node):
-    border_box = node.border_box
-    border = node.evaluated_style.border
-    if self.width <= 0 or \
-       self.style in ('none', 'hidden') or \
-       self.color == 'transparent': # TODO self.color.is_transparent()
-      self.__vertices = []
-      return
-    if self.style not in ('solid', 'hidden', 'inset', 'outset'):
-      raise NotImplementedError(
-        "%s border style is not yet "
-        "implemented" % self.style.title()
-      )
-    x, y, w, h = border_box
-    l, t, r, b = x, y, x + w, y + h
-    width, style, color = self.width, self.style, Color(self.color)
-    side = self.prefix
-    if side == 'left':
-      vertices = [(l, t), (l, b), 
-        (l + width, b - border.bottom.width),
-        (l + width, t + border.top   .width)]
-    elif side == 'right':
-      vertices = [(r, t), (r, b),
-        (r - width, b - border.bottom.width),
-        (r - width, t + border.top   .width)]
-    elif side == 'bottom':
-      vertices = [(l, t), (r, t),
-        (r - border.right.width, t + width),
-        (l + border.left .width, t + width)]
-    elif side == 'top':
-      vertices = [(l, b), (r, b),
-        (r - border.right.width, b - width),
-        (l + border.left .width, b - width)]
-    else:
-      assert False, '`BorderSide` class seems to be invalid.'
-    self.__color = color
-    # lightening or darkening color if inset or outset
-    if (style, side) in [('inset',  'left' ), ('inset',  'top'   ),
-                         ('outset', 'right'), ('outset', 'bottom')]:
-      self.__color = color.darken()
-    if (style, side) in [('inset',  'right'), ('inset',  'bottom'),
-                         ('outset', 'left' ), ('outset', 'top'   )]:
-      self.__color = color.lighten()
-    self.__vertices_count = len(vertices)
-    self.__vertices = texturing.to_buffer(vertices)
 
 
 class Border(SidedStylesContainer):

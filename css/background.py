@@ -29,7 +29,8 @@ class Background(StylesContainer):
       # try...
       raise NotImplementedError
   
-  def draw(self, node):
+  def draw(self):
+    node = self.node
     # WARNING using background-origin here, but
     # it won't work for `initial` and `inherit`
     x, y, w, h = getattr(node, self.origin.replace('-', '_'))
