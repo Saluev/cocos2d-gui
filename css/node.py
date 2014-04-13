@@ -41,7 +41,7 @@ class CSSNode(object):
     applicable_styles.append(id_query)
     applicable_styles.extend(id_query + ':' + pseudo for pseudo in self.state)
     # now collecting all together
-    from pprint import pprint; pprint(applicable_styles)
+    #from pprint import pprint; pprint(applicable_styles)
     for applicable_style in applicable_styles:
       style.update(styles[applicable_style])
     self.evaluated_style = style

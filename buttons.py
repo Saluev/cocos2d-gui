@@ -3,16 +3,12 @@ from OpenGL import GL
 # pyglet
 import pyglet
 # gui
-from . import CSSNode, GUINode
+from . import GUINode
 
 class Button(GUINode):
   def __init__(self, *args, **kwargs):
     super(Button, self).__init__()
     self.text_label = pyglet.text.Label(*args, **kwargs)
-    
-  #def get_content_size(self):
-    #element = self.text_layer.element
-    #return element.width, element.height
   
   def draw(self, *args, **kwargs):
     GL.glPushMatrix()

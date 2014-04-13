@@ -31,15 +31,33 @@ class GUINode(SmartNode, CSSNode):
     super(GUINode, self).draw(*args, **kwargs)
     GL.glPushMatrix()
     self.transform()
-    self.evaluated_style.background.draw(self)
-    self.evaluated_style.border.draw(self)
+    self.evaluated_style.background.draw()
+    self.evaluated_style.border.draw()
     GL.glPopMatrix()
   
-  def on_mouse_enter(self):
-    self.add_state('hover')
+  def focus(self):
+    self.add_state('focus')
+    super(GUINode, self).focus()
   
-  def on_mouse_out(self):
+  def blur(self):
+    self.remove_state('focus')
+    super(GUINode, self).blur()
+  
+  def mouse_enter(self):
+    self.add_state('hover')
+    super(GUINode, self).mouse_enter()
+  
+  def mouse_out(self):
     self.remove_state('hover')
+    super(GUINode, self).mouse_out()
+  
+  def mouse_press(self, *args):
+    self.add_state('active')
+    super(GUINode, self).mouse_press(*args)
+  
+  def mouse_release(self, *args):
+    self.remove_state('active')
+    super(GUINode, self).mouse_release(*args)
 
 
 class GUIImage(GUINode): # TODO: call it just Image
@@ -101,6 +119,7 @@ class GUIWindow(SmartLayer, CSSNode):
 from ..resources import get as resources_get
 from .layouts import VerticalLayout
 from .buttons import Button
+from .editors import TextEdit
 from .windows import AttachedWindow
 window = AttachedWindow()
 layout = VerticalLayout()
@@ -112,7 +131,10 @@ img2 = GUIImage(resources_get('stone_pile_1'))
 img3 = resources_get('granite_frame')
 img1.style['border'] = 5, 'solid', 'green'
 img1.style['background-color'] = 'darkgreen'
-img1.pseudostyle('hover')['border-bottom-color'] = 'blue'
+#GUIImage.pseudostyle('hover')['border-bottom'] = (5, 'solid', 'blue')
+img1.pseudostyle('focus')['border-right-color'] = 'cyan'
+img1.pseudostyle('active')['border-left-color'] = 'magenta'
+img1.pseudostyle('hover')['border-top-color'] = 'red'
 img1.style['border-style'] = 'inset'
 img2.style['border'] = 5, 'outset', 'blue'
 img2.style['background-color'] = 'darkblue'
@@ -124,10 +146,14 @@ img3.apply_to(layout)
 #layout.style['border-image-repeat'] = 'repeat'
 btn = Button('Hi there!')
 btn.style['width' ] = 100
-btn.style['height'] = 20
+btn.style['height'] = 16
+edt = TextEdit(text='yoptayoptayoptayoptayopta')
+edt.style['width'] = 100
+edt.style['height'] = 16
 layout.add(img1)
 layout.add(img2)
 layout.add(btn)
+layout.add(edt)
 window.add(layout)
 window.attach = (-50, -50)
 window.order()#"""
