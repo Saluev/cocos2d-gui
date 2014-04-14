@@ -45,7 +45,7 @@ class TextEdit(GUINode):
   def __init__(self, *args, **kwargs):
     super(TextEdit, self).__init__()
     self.text_label = pyglet.text.Label(*args, **kwargs)
-    self.text_objects = [self.text_label]
+    self.text_objects = (self.text_label,)
     self.__selection = (0, 0)
     self.__selection_focus = 0
     self.update_glyphs()
@@ -219,7 +219,6 @@ class TextEdit(GUINode):
 
 TextEdit.register_event_type('on_selection_change')
 
-#TextEdit.style['color'] = 'red'
 TextEdit.style['padding-bottom'] = 4
 TextEdit.style['border'] = (2, 'inset', 'gray')
 TextEdit.style['background-color'] = 'gray'

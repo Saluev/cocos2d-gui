@@ -132,9 +132,14 @@ class StylesContainer(dict):
           self.set_by_subname(key, value)
         else:
           own.update(value)
+      elif key in self.subnames:
+        own = self.get_by_subname(key)
+        if isinstance(own, StylesContainer):
+          own.set_to_value(value)
+        else:
+          self.set_by_subname(key, value)
       else:
-        self.set_by_subname(key, value)
-
+        self.__setitem__(key, value)
 
 class SidedStylesContainer(StylesContainer):
   subnames = ['top', 'right', 'bottom', 'left']

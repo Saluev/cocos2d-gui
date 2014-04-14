@@ -18,8 +18,7 @@ class GUIWindow(SmartLayer, CSSNode):
     if len(self.get_children()) > 1:
       raise RuntimeError(
         'Only one child is supported for GUIWindow. '
-        'Use layouts to add more objects.'
-      )
+        'Use layouts to add more objects.')
     SmartLayer.add(self, child, *args, **kwargs)
   
   def get_nodes(self):

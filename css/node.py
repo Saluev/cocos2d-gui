@@ -99,8 +99,9 @@ class CSSNode(object):
     raise NotImplementedError
   
   def get_content_size(self):
-    if 'width' in self.style and 'height' in self.style:
-      return (self.style['width'], self.style['height']) # TODO to_px()
+    style = self.evaluated_style
+    if 'width' in style and 'height' in style:
+      return (style['width'], style['height']) # TODO to_px()
     raise NotImplementedError
   
   def get_nodes(self):
