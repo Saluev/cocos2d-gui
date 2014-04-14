@@ -4,8 +4,8 @@ __all__ = [
 ]
 
 # importing basic names to publish them
-from style import styles, Style
-from node import CSSNode
+from .style import styles, Style
+from .node import CSSNode
 # importing extensions
 import border, borderimage, background, font
 import rendering

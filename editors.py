@@ -1,3 +1,6 @@
+# built-in
+from __future__ import print_function
+# PyOpenGL
 from OpenGL import GL
 # pyglet
 import pyglet
@@ -179,7 +182,7 @@ class TextEdit(GUINode):
       letter = chr(button)
       self.replace_selection(letter)
     except ValueError:
-      print "Unrecognized key:", button, modifiers
+      print("Unrecognized key:", button, modifiers)
     super(TextEdit, self).key_press(button, modifiers)
   
   def mouse_press(self, x, y, button, modifiers):
@@ -202,7 +205,6 @@ class TextEdit(GUINode):
     new_selection = sorted([sel_focus, curr_caret_pos])
     old_selection = self.__selection
     self.__selection = new_selection
-    print "EDITOR: SELECTION:", self.__selection
     super(TextEdit, self).mouse_motion(x, y, dx, dy)
     self.selection_change(old_selection, new_selection)
   
