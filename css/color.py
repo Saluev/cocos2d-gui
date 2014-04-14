@@ -1,6 +1,39 @@
-import re
+import re, colorsys
 
-_hex_color = re.compile('^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$')
+_float = '(?:[-+]?(?:\d*\.\d+|\d+\.\d*|\d+)(?:[eE][-+]?\d+)?)'
+
+_hex_color  = re.compile('^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$')
+_hsl_color  = re.compile(
+    '^hsl\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)$')
+_rgb_color  = re.compile(
+    '^rgb\(\s*(\d+%?)\s*,\s*(\d+%?)\s*,\s*(\d+%?)\s*\)$')
+_rgba_color = re.compile(
+    '^rgba\(\s*(\d+%%?)\s*,\s*(\d+%%?)\s*,\s*(\d+%%?)\s*,'
+    '\s*(%s)\s*\)$' % _float)
+_hsla_color = re.compile(
+    '^hsla\(\s*(\d+)\s*,\s*(\d+)%%\s*,\s*(\d+)%%\s*,'
+    '\s*(%s)\s*\)$' % _float)
+
+def clamp(what, minv, maxv):
+  return max(minv, min(maxv, what))
+
+def _clamp_to_ubyte(what):
+  return clamp(int(round(what)), 0, 255)
+
+def _raw_to_ubyte(s):
+  if '%' in s:
+    result = int(int(s[:-1]) * 2.55 + 0.5) # rounding
+    return _clamp_to_ubyte(result)
+  else:
+    return _clamp_to_ubyte(int(s))
+
+def hsl_to_rgb(h, s, l):
+  """Converts HSL as it was obtained from CSS to valid RGB."""
+  h, s, l = h / 360., s / 100., l / 100.
+  r, g, b = colorsys.hls_to_rgb(h, l, s)
+  r, g, b = int(255 * r), int(255 * g), int(255 * b)
+  r, g, b = map(_clamp_to_ubyte, (r, g, b))
+  return r, g, b
 
 # thanks http://www.yourhtmlsource.com/stylesheets/namedcolours.html
 # for this color table
@@ -146,49 +179,87 @@ _named_colors = {
   'Whitesmoke': 'F5F5F5',
   'Yellow': 'FFFF00',
   'YellowGreen': '9ACD32',
+  'transparent': 'rgba(0, 0, 0, 0)'
 }
 
-# TODO color class!
 
 class Color(tuple):
   def __new__(cls, s):
     if isinstance(s, (tuple, list)):
+      s = map(_clamp_to_ubyte, s)
       return tuple.__new__(cls, s)
     if not isinstance(s, basestring):
-      raise ValueError('Invalid color value: %r' % s)
-    s = s.lower()
-    hex_match = _hex_color.match(s)
-    if hex_match is not None:
-      hex_color = hex_match.group(1)
-      if len(hex_color) == 6:
-        r = int(hex_color[0:2], 16)
-        g = int(hex_color[2:4], 16)
-        b = int(hex_color[4:6], 16)
-      elif len(hex_color) == 3:
-        r = int(hex_color[0], 16) * (16 + 1)
-        g = int(hex_color[1], 16) * (16 + 1)
-        b = int(hex_color[2], 16) * (16 + 1)
-      else:
-        assert False, '`_hex_color` regexp seems to be invalid.'
-      return tuple.__new__(cls, (r, g, b))
+      raise TypeError('Invalid CSS color value: %r' % s)
+    s = s.lower().strip()
+    ## checking simple names ##
     if s in _named_colors:
       return cls.__new__(cls, _named_colors[s])
-    raise NotImplementedError(
-      "Only #RRGGBB format is currently "
-      "implemented for color."
-    )
+    try:
+      a = 255 # default alpha value
+      ## checking hex RGB triple ##
+      hex_match = _hex_color.match(s)
+      if hex_match is not None:
+        hex_color = hex_match.group(1)
+        if len(hex_color) == 6:
+          r = int(hex_color[0:2], 16)
+          g = int(hex_color[2:4], 16)
+          b = int(hex_color[4:6], 16)
+        elif len(hex_color) == 3:
+          r = int(hex_color[0], 16) * (16 + 1)
+          g = int(hex_color[1], 16) * (16 + 1)
+          b = int(hex_color[2], 16) * (16 + 1)
+        else:
+          assert False, '`_hex_color` regexp seems to be invalid.'
+        return tuple.__new__(cls, (r, g, b, a))
+      ## checking RGB
+      rgb_match = _rgb_color.match(s)
+      if rgb_match is not None:
+        r, g, b = map(_raw_to_ubyte, rgb_match.groups())
+        return tuple.__new__(cls, (r, g, b, a))
+      ## checking RGBA ##
+      rgba_match = _rgba_color.match(s)
+      if rgba_match is not None:
+        r, g, b, a = rgba_match.groups()
+        r, g, b = map(_raw_to_ubyte, (r, g, b))
+        a = int(float(a) * 255 + 0.5)
+        return tuple.__new__(cls, (r, g, b, a))
+      ## checking HSL ##
+      hsl_match = _hsl_color.match(s)
+      if hsl_match is not None:
+        h, s, l = map(int, hsl_match.groups())
+        r, g, b = hsl_to_rgb(h, s, l)
+        return tuple.__new__(cls, (r, g, b, a))
+      ## checking HSLA ##
+      hsla_match = _hsla_color.match(s)
+      if hsla_match is not None:
+        h, s, l, a = hsla_match.groups()
+        r, g, b = hsl_to_rgb(int(h), int(s), int(l))
+        a = int(float(a) * 255 + 0.5)
+        return tuple.__new__(cls, (r, g, b, a))
+      # nothing worked
+      raise ValueError
+    except ValueError:
+      raise ValueError('Invalid CSS color: %r' % s)
   
   def is_transparent(self):
-    return False
+    return (self.alpha == 0)
+  
+  # TODO: properties like red, green, blue, hue, saturation, ...
+  
+  @property
+  def alpha(self):
+    return self[3]
+  
+  def scale(self, mpr):
+    r, g, b = self[:3]
+    r, g, b = mpr * r, mpr * g, mpr * b
+    return Color((r, g, b, self.alpha))
   
   def lighten(self, strength=0.2):
-    multiplier = 1.0 + strength
-    return Color(map(lambda v: min(255, int(multiplier * v)), self))
+    return self.scale(1.0 + strength)
   
   def darken(self, strength=0.2):
-    multiplier = 1.0 - strength
-    return Color(map(lambda v: max(000, int(multiplier * v)), self))
-    
-  
+    return self.scale(1.0 - strength)
+
 
 _named_colors = {k.lower(): Color(v) for k, v in _named_colors.items()}

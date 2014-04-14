@@ -24,9 +24,10 @@ class BorderSide(border.BorderSide):
     node = self.node
     border_box = node.border_box
     border = node.evaluated_style.border
-    if self.width <= 0 or \
-       self.style in ('none', 'hidden') or \
-       self.color == 'transparent': # TODO self.color.is_transparent()
+    width, style, color = self.width, self.style, Color(self.color)
+    if width <= 0 or \
+       style in ('none', 'hidden') or \
+       color.is_transparent():
       self.__vertices = []
       return
     if self.style not in ('solid', 'hidden', 'inset', 'outset'):
@@ -36,7 +37,6 @@ class BorderSide(border.BorderSide):
       )
     x, y, w, h = border_box
     l, t, r, b = x, y, x + w, y + h
-    width, style, color = self.width, self.style, Color(self.color)
     side = self.prefix
     if side == 'left':
       vertices = [(l, t), (l, b), 
@@ -74,7 +74,7 @@ class BorderSide(border.BorderSide):
     GL.glPushAttrib(GL.GL_CURRENT_BIT | GL.GL_ENABLE_BIT)
     GL.glPushClientAttrib(GL.GL_CLIENT_ALL_ATTRIB_BITS)
     
-    GL.glColor3ubv(self.__color)
+    GL.glColor4ubv(self.__color)
     GL.glEnableClientState(GL.GL_VERTEX_ARRAY)
     GL.glVertexPointer(2, GL.GL_FLOAT, 0, self.__vertices)
     GL.glDrawArrays(GL.GL_QUADS, 0, self.__vertices_count)

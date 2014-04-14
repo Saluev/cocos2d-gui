@@ -106,7 +106,7 @@ class Font(StylesContainer):
     size   = self.__evaluate_size  (node)
     weight = self.__evaluate_weight(node)
     style  = self.__evaluate_style (node)
-    color  = Color(node.evaluated_style['color']) + (255,) # HACK
+    color  = Color(node.evaluated_style['color'])
     for obj in node.text_objects:
       if family:   # HACK complete __evaluate_family and
         obj.font_name = family # you won't need this `if`

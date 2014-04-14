@@ -29,17 +29,17 @@ class Background(StylesContainer):
       # try...
       raise NotImplementedError
   
-  def draw(self):
+  def draw(self): # TODO move to `rendering.py`
     node = self.node
     # WARNING using background-origin here, but
     # it won't work for `initial` and `inherit`
     x, y, w, h = getattr(node, self.origin.replace('-', '_'))
     l, t, r, b = x, y, x + w, y + h
+    color = Color(self.color)
     from OpenGL import GL
-    if self.color != 'transparent': # TODO self.color.is_transparent()
-      color = Color(self.color)
+    if not color.is_transparent():
       GL.glPushAttrib(GL.GL_CURRENT_BIT)
-      GL.glColor3ubv(color)
+      GL.glColor4ubv(color)
       GL.glBegin(GL.GL_QUADS)
       vertices = [(l, t), (l, b), (r, b), (r, t)]
       map(GL.glVertex2fv, vertices)

@@ -26,6 +26,9 @@ class CSSNode(object):
       self.state.remove(state)
       self.__dirty()
   
+  def has_state(self, state):
+    return state in self.state
+  
   def evaluate_style(self):
     id_query = '#' + self.id
     classes = type(self).mro()
