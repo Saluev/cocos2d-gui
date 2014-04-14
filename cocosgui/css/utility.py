@@ -84,3 +84,31 @@ def collapse_hv_value(value):
       return tuple(value)
   else:
     raise ValueError('Invalid expanded hv value: %r' % value)
+
+import new
+
+class mutualmethod(classmethod):
+  """mutualmethod(function) -> method
+ 
+  Convert a function to be a mutual method, i. e. a method that can be
+  called for both class object and it's instances.
+ 
+  A mutual method receives the class or it's instance as it's first argument.
+  """
+  def __get__(self, obj, t = None):
+    if t is None:
+      raise NotImplementedError # I don't know what to do here
+    if obj is None:
+      return new.instancemethod(self.__func__, t, type(t))
+    else:
+      return new.instancemethod(self.__func__, obj, t)
+
+
+class mutualproperty(property):
+  def __get__(self, obj, t = None):
+    if t is None:
+      raise NotImplementedError
+    if obj is None:
+      return self.fget(t)
+    else:
+      return self.fget(obj)

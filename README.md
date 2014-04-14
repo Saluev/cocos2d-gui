@@ -2,14 +2,14 @@
 
 This is **not** official GUI package for cocos2d.
 
+It **does not** work on Python3.
+
 **Dependencies**: pyopengl, pyglet, cocos2d
 
 ## Installation
 
-In this branch this module is just a submodule of one of my projects, so
-I couldn't make a valid `setup.py` script. Just copy the whole folder,
-maybe...
+    $ sudo python setup.py install
 
 ## Examples
 
-... will be added later.
+... are in folder `examples`.

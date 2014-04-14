@@ -1,4 +1,4 @@
-from common.utility import mutualmethod, mutualproperty
+from .utility import mutualmethod, mutualproperty
 from .style import styles, Style
 
 

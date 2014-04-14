@@ -1,6 +1,6 @@
 from collections import defaultdict
-from utility import to_words, from_words
-from utility import expand_sided_value, collapse_sided_value
+from .utility import to_words, from_words
+from .utility import expand_sided_value, collapse_sided_value
 
 class StylesContainer(dict):
   
