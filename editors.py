@@ -1,8 +1,9 @@
 from OpenGL import GL
 # pyglet
 import pyglet
+from pyglet.window import key
 # gui
-from . import GUINode
+from .node import GUINode
 # css
 from css.color import Color
 
@@ -22,10 +23,19 @@ class Caret(GUINode):
     return (self.glyph.width, self.glyph.height)
   
   def draw(self, *args, **kwargs):
+    if not self.parent.has_state('focus'):
+      return
+    selection = self.parent.selection
+    if selection[0] != selection[1]:
+      return
     GL.glPushMatrix()
     self.transform()
     self.glyph.draw()
     GL.glPopMatrix()
+  
+  def apply_style(self, **options):
+    super(Caret, self).apply_style(**options)
+    self.__glyph = None # it will be updated on draw
 
 
 class TextEdit(GUINode):
@@ -33,10 +43,11 @@ class TextEdit(GUINode):
     super(TextEdit, self).__init__()
     self.text_label = pyglet.text.Label(*args, **kwargs)
     self.text_objects = [self.text_label]
-    self.__selection = [0, 0]
+    self.__selection = (0, 0)
+    self.__selection_focus = 0
     self.update_glyphs()
     self.caret = Caret()
-    self.add(self.caret)
+    self.add(self.caret) # styles can be applied to it now
   
   ## utility functions ##
   @property
@@ -48,9 +59,31 @@ class TextEdit(GUINode):
     return self.text_label.text
   
   @property
+  def text_len(self):
+    # the fastest possible len (assuming glyphs are correct)
+    return len(self.glyphs)
+  
+  @property
   def selection(self):
     return tuple(self.__selection)
   
+  def __selection_edge(self):
+    sel_left, sel_right = self.__selection
+    if sel_left == self.__selection_focus:
+      return sel_right
+    else:
+      return sel_left
+  
+  ## public api ##
+  def replace_selection(self, by_what):
+    sel_left, sel_right = self.selection
+    new_text = self.text[:sel_left] + by_what + self.text[sel_right:]
+    self.text_label.text = new_text
+    self.__selection = (sel_left + len(by_what),) * 2
+    self.update_glyphs()
+    self.update_caret()
+  
+  ## inner api ##
   def update_glyphs(self):
     self.glyphs = self.font.get_glyphs(self.text)
     self.offsets = []
@@ -94,15 +127,67 @@ class TextEdit(GUINode):
     GL.glPopMatrix()
   
   ## event handlers ##
-  def on_key_press(self, key, modifiers):
-    print key
+  def key_press(self, button, modifiers):
+    if button == key.BACKSPACE:
+      # TODO Ctrl+Backspace erases a word
+      sel_left, sel_right = self.__selection
+      if sel_left == sel_right > 0:
+        self.__selection = (sel_left - 1, sel_right)
+      self.replace_selection('')
+    elif button == key.DELETE:
+      # TODO Ctrl+Delete erases a word
+      sel_left, sel_right = self.__selection
+      if sel_left == sel_right < self.text_len:
+        self.__selection = (sel_left, sel_right + 1)
+      self.replace_selection('')
+    elif button == key.HOME:
+      if modifiers & key.MOD_SHIFT:
+        self.__selection = (0, self.__selection_focus)
+      else:
+        self.__selection = (0, 0)
+      self.update_caret()
+    elif button == key.END:
+      if modifiers & key.MOD_SHIFT:
+        self.__selection = (self.__selection_focus, self.text_len)
+      else:
+        self.__selection = (self.text_len,) * 2
+      self.update_caret()
+    elif button == key.LEFT:
+      # TODO Ctrl+Left moves a word back
+      sel_left, sel_right = self.__selection
+      if modifiers & key.MOD_SHIFT:
+        new_sel_1 = max(0, self.__selection_edge() - 1)
+        new_sel_2 = self.__selection_focus
+        self.__selection = sorted((new_sel_1, new_sel_2))
+      else:
+        self.__selection_focus = max(0, self.__selection_edge() - 1)
+        self.__selection = (self.__selection_focus,) * 2
+      self.update_caret()
+    elif button == key.RIGHT:
+      # TODO Ctrl+Right moves a word right
+      sel_left, sel_right = self.__selection
+      if modifiers & key.MOD_SHIFT:
+        new_sel_1 = min(self.text_len, self.__selection_edge() + 1)
+        new_sel_2 = self.__selection_focus
+        self.__selection = sorted((new_sel_1, new_sel_2))
+      else:
+        self.__selection_focus = min(self.text_len, self.__selection_edge() + 1)
+        self.__selection = (self.__selection_focus,) * 2
+      self.update_caret()
+    try:
+      # TODO how to handle Cyrillic?..
+      letter = chr(button)
+      self.replace_selection(letter)
+    except ValueError:
+      print "Unrecognized key:", button, modifiers
+    super(TextEdit, self).key_press(button, modifiers)
   
   def mouse_press(self, x, y, button, modifiers):
     x, y = self.point_to_local((x, y))
     x = x - self.content_box[0]
     # TODO handle Shift button here
     curr_caret_pos = self.get_caret_pos(x)
-    new_selection = [curr_caret_pos] * 2
+    new_selection = (curr_caret_pos,) * 2
     old_selection = self.__selection
     self.__selection = new_selection
     self.__selection_focus = curr_caret_pos
@@ -122,7 +207,6 @@ class TextEdit(GUINode):
     self.selection_change(old_selection, new_selection)
   
   def mouse_release(self, x, y, button, modifiers):
-    self.__selection_focus = None
     super(TextEdit, self).mouse_release(x, y, button, modifiers)
   
   def selection_change(self, old_selection, new_selection):

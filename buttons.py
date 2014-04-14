@@ -3,7 +3,7 @@ from OpenGL import GL
 # pyglet
 import pyglet
 # gui
-from . import GUINode
+from .node import GUINode
 
 class Button(GUINode):
   def __init__(self, *args, **kwargs):

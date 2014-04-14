@@ -1,0 +1,176 @@
+# built-in
+import weakref
+# PyOpenGL
+from OpenGL import GL, GLU
+# pyglet
+import pyglet
+# cocos2d
+import cocos
+
+class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
+  nodes_by_id = weakref.WeakValueDictionary()
+  
+  def __init__(self, *args, **kwargs):
+    super(SmartNode, self).__init__(*args, **kwargs)
+    type(self).nodes_by_id[id(self)] = self
+  
+  def transform(self):
+    super(SmartNode, self).transform()
+  
+  def before_visit(self):
+    GL.glPushName(id(self))
+  
+  def after_visit(self):
+    GL.glPopName(id(self))
+  
+  def visit(self):
+    # draw() method pattern
+    self.before_visit()
+    super(SmartNode, self).visit()
+    self.after_visit()
+  
+  # shortcuts for events #
+  def focus(self):
+    self.dispatch_event('on_focus')
+  
+  def blur(self):
+    self.dispatch_event('on_blur')
+  
+  def mouse_enter(self):
+    self.dispatch_event('on_mouse_enter')
+  
+  def mouse_out(self):
+    self.dispatch_event('on_mouse_out')
+  
+  def mouse_motion(self, *args):
+    self.dispatch_event('on_mouse_motion', *args)
+  
+  def mouse_drag(self, *args):
+    self.dispatch_event('on_mouse_drag', *args)
+  
+  def mouse_press(self, *args):
+    self.dispatch_event('on_mouse_press', *args)
+  
+  def mouse_release(self, *args):
+    self.dispatch_event('on_mouse_release', *args)
+  
+  def key_press(self, *args):
+    self.dispatch_event('on_key_press', *args)
+  
+  def key_release(self, *args):
+    self.dispatch_event('on_key_release', *args)
+
+
+SmartNode.register_event_type('on_mouse_release')
+SmartNode.register_event_type('on_mouse_motion')
+SmartNode.register_event_type('on_mouse_press')
+SmartNode.register_event_type('on_mouse_enter')
+SmartNode.register_event_type('on_mouse_drag')
+SmartNode.register_event_type('on_mouse_out')
+SmartNode.register_event_type('on_key_release')
+SmartNode.register_event_type('on_key_press')
+SmartNode.register_event_type('on_focus')
+SmartNode.register_event_type('on_blur')
+
+
+class SmartLayer(cocos.layer.base_layers.Layer):
+  
+  def __init__(self, *args, **kwargs):
+    super(SmartLayer, self).__init__(*args, **kwargs)
+    self.focused = []
+    self.highlighted = []
+    self.__mouse_position = (-1, -1)
+  
+  def objects_under_cursor(self, x, y):
+    if not self.children:
+      return []
+    
+    # TODO simple rectangular check to improve performance
+    viewport = GL.glGetIntegerv(GL.GL_VIEWPORT)
+    GL.glSelectBuffer(512)
+    GL.glRenderMode(GL.GL_SELECT)
+    GL.glInitNames()
+    GL.glMatrixMode(GL.GL_PROJECTION)
+    GL.glPushMatrix()
+    # copying projection
+    # WARNING this approach can be unstable!
+    M = GL.glGetFloatv(GL.GL_PROJECTION_MATRIX)
+    GL.glLoadIdentity()
+    GLU.gluPickMatrix(x, y, 1., 1., viewport)
+    GL.glMultMatrixf(M)
+    GL.glMatrixMode(GL.GL_MODELVIEW)
+    
+    super(SmartLayer, self).visit()
+    
+    hits = GL.glRenderMode(GL.GL_RENDER)
+    result = []
+    for near, far, names in hits:
+      result = [] # XXX we just wish to get last hit record.
+      for name in names:
+        obj = SmartNode.nodes_by_id.get(name)
+        if obj is not None:
+          result.append(obj)
+    
+    GL.glMatrixMode(GL.GL_PROJECTION)
+    GL.glPopMatrix()
+    GL.glMatrixMode(GL.GL_MODELVIEW)
+    
+    old_result = self.highlighted
+    new_result = list(result)
+    self.highlighted = new_result
+    for obj in set(old_result) - set(new_result):
+      obj.mouse_out()
+    for obj in set(new_result) - set(old_result):
+      obj.mouse_enter()
+    return result
+  
+  def on_mouse_motion(self, x, y, dx, dy):
+    self.__mouse_position = (x, y)
+    highlighted = self.highlighted
+    for obj in highlighted:
+      obj.mouse_motion(x, y, dx, dy)
+  
+  def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
+    self.__mouse_position = (x, y)
+    highlighted = self.highlighted
+    for obj in highlighted:
+      obj.mouse_drag(x, y, dx, dy, button, modifiers)
+  
+  def on_mouse_press(self, x, y, button, modifiers):
+    self.__mouse_position = (x, y)
+    focused, highlighted = set(self.focused), set(self.highlighted)
+    # blurring
+    for obj in focused - highlighted:
+      obj.blur()
+    # focusing
+    for obj in highlighted - focused:
+      obj.focus()
+    self.focused = list(self.highlighted)
+    # pressing
+    for obj in self.highlighted:
+      obj.mouse_press(x, y, button, modifiers)
+    if self.highlighted:
+      return True
+  
+  def on_mouse_release(self, x, y, button, modifiers):
+    self.__mouse_position = (x, y)
+    for obj in self.highlighted:
+      obj.mouse_release(x, y, button, modifiers)
+    if self.highlighted:
+      return True
+  
+  def on_key_press(self, key, modifiers):
+    for obj in self.focused:
+      obj.key_press(key, modifiers)
+    if self.focused:
+      return True
+  
+  def on_key_release(self, key, modifiers):
+    for obj in self.focused:
+      obj.key_release(key, modifiers)
+    if self.focused:
+      return True
+  
+  def visit(self):
+    self.objects_under_cursor(*self.__mouse_position)
+    super(SmartLayer, self).visit()

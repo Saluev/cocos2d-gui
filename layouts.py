@@ -1,4 +1,4 @@
-from . import GUINode
+from .node import GUINode
 
 
 class GUILayout(GUINode):
