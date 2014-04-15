@@ -85,6 +85,10 @@ def collapse_hv_value(value):
   else:
     raise ValueError('Invalid expanded hv value: %r' % value)
 
+def reverse(iterable):
+  # TODO iterator implementation for large lists and tuples
+  return iterable[::-1]
+
 import new
 
 class mutualmethod(classmethod):
@@ -112,3 +116,4 @@ class mutualproperty(property):
       return self.fget(t)
     else:
       return self.fget(obj)
+

@@ -1,6 +1,6 @@
 from collections import defaultdict
-from .utility import to_words, from_words
-from .utility import expand_sided_value, collapse_sided_value
+from utility import to_words, from_words
+from utility import expand_sided_value, collapse_sided_value
 
 class StylesContainer(dict):
   
@@ -124,7 +124,9 @@ class StylesContainer(dict):
     except AttributeError:
       return self.get_by_subname(which)
   
-  def update(self, other):
+  def update(self, other={}, **kwargs):
+    other = dict(other)
+    other.update(kwargs)
     for key, value in other.items():
       if isinstance(value, StylesContainer):
         own = self.get_by_subname(key)
@@ -132,9 +134,14 @@ class StylesContainer(dict):
           self.set_by_subname(key, value)
         else:
           own.update(value)
+      elif key in self.subnames:
+        own = self.get_by_subname(key)
+        if isinstance(own, StylesContainer):
+          own.set_to_value(value)
+        else:
+          self.set_by_subname(key, value)
       else:
-        self.set_by_subname(key, value)
-
+        self.__setitem__(key, value)
 
 class SidedStylesContainer(StylesContainer):
   subnames = ['top', 'right', 'bottom', 'left']

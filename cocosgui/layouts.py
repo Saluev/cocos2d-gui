@@ -44,7 +44,7 @@ class VerticalLayout(GUILayout):
   def apply_style(self, **options):
     super(VerticalLayout, self).apply_style(**options)
     # now place children properly
-    children = self.get_children()
+    children = self.get_children()[::-1]
     xoffset, yoffset = self.content_box[:2]
     for child in children:
       box = child.margin_box

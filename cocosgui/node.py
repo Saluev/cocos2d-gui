@@ -1,7 +1,7 @@
 from OpenGL import GL
 from .css import CSSNode, evaluate as css_evaluate
 from .base import SmartNode
-from .windows import GUIWindow
+
 
 class GUINode(SmartNode, CSSNode):
   def __init__(self, style = None):
@@ -13,9 +13,23 @@ class GUINode(SmartNode, CSSNode):
     css_evaluate(self.window, self.parent)
   
   @property
+  def z(self):
+    siblings = self.parent.children
+    zvalues, siblings = zip(*siblings)
+    return zvalues[siblings.index(self)]
+  
+  @z.setter
+  def z(self, value):
+    siblings = self.parent.children
+    zvalues, siblings = map(list, zip(*siblings))
+    zvalues[siblings.index(self)] = value
+    self.parent.children = sorted(zip(zvalues, siblings))
+  
+  @property
   def window(self):
+    from .layers import GUILayer
     parent = self.parent
-    while not isinstance(parent, GUIWindow) and parent is not None:
+    while not isinstance(parent, GUILayer) and parent is not None:
       parent = parent.parent
     return parent
   
