@@ -34,6 +34,10 @@ class Button(GUINode):
   @text.setter
   def text(self, value):
     self.text_label.text = value
+  
+  def mouse_release(self, *args):
+    super(Button, self).mouse_release(*args)
+    self.dispatch_event('on_click')
 
 
 Button.register_event_type('on_click')

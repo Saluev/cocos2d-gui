@@ -6,6 +6,9 @@ from OpenGL import GL, GLU
 import pyglet
 # cocos2d
 import cocos
+from cocos.director import director
+from common.utility import reverse
+
 
 class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
   nodes_by_id = weakref.WeakValueDictionary()
@@ -77,11 +80,15 @@ class SmartLayer(cocos.layer.base_layers.Layer):
   
   def __init__(self, *args, **kwargs):
     super(SmartLayer, self).__init__(*args, **kwargs)
-    self.focused = []
+    self.focused = None
     self.highlighted = []
     self.__mouse_position = (-1, -1)
   
   def objects_under_cursor(self, x, y):
+    """Writes to `self.highlighted` list of
+    objects under cursor, in descending order
+    (the first is the top element).
+    """
     if not self.children:
       return []
     
@@ -122,40 +129,47 @@ class SmartLayer(cocos.layer.base_layers.Layer):
       obj.mouse_out()
     for obj in set(new_result) - set(old_result):
       obj.mouse_enter()
-    return result
+    
+    self.highlighted.reverse()
+    
   
   def on_mouse_motion(self, x, y, dx, dy):
     self.__mouse_position = (x, y)
-    highlighted = self.highlighted
-    for obj in highlighted:
-      obj.mouse_motion(x, y, dx, dy)
+    for obj in self.highlighted:
+      if obj.mouse_motion(x, y, dx, dy) == False:
+        break
   
   def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
     self.__mouse_position = (x, y)
-    highlighted = self.highlighted
-    for obj in highlighted:
-      obj.mouse_drag(x, y, dx, dy, button, modifiers)
+    for obj in self.highlighted:
+      if obj.mouse_drag(x, y, dx, dy, button, modifiers) == False:
+        break
   
   def on_mouse_press(self, x, y, button, modifiers):
     self.__mouse_position = (x, y)
-    focused, highlighted = set(self.focused), set(self.highlighted)
-    # blurring
-    for obj in focused - highlighted:
-      obj.blur()
-    # focusing
-    for obj in highlighted - focused:
-      obj.focus()
-    self.focused = list(self.highlighted)
+    old_focused = self.focused
+    new_focused = (self.highlighted or [None])[0]
+    if old_focused != new_focused:
+      # blurring previously focused object
+      # TODO undo on False
+      if old_focused is not None:
+        old_focused.blur()
+      # focusing newly focused object
+      if new_focused is not None:
+        new_focused.focus()
+    self.focused = new_focused
     # pressing
     for obj in self.highlighted:
-      obj.mouse_press(x, y, button, modifiers)
+      if obj.mouse_press(x, y, button, modifiers) == False:
+        break
     if self.highlighted:
       return True
   
   def on_mouse_release(self, x, y, button, modifiers):
     self.__mouse_position = (x, y)
     for obj in self.highlighted:
-      obj.mouse_release(x, y, button, modifiers)
+      if obj.mouse_release(x, y, button, modifiers) == False:
+        break
     if self.highlighted:
       return True
   
