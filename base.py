@@ -174,15 +174,13 @@ class SmartLayer(cocos.layer.base_layers.Layer):
       return True
   
   def on_key_press(self, key, modifiers):
-    for obj in self.focused:
-      obj.key_press(key, modifiers)
-    if self.focused:
+    if self.focused is not None:
+      self.focused.key_press(key, modifiers)
       return True
   
   def on_key_release(self, key, modifiers):
-    for obj in self.focused:
-      obj.key_release(key, modifiers)
-    if self.focused:
+    if self.focused is not None:
+      self.focused.key_release(key, modifiers)
       return True
   
   def visit(self):

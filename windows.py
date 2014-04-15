@@ -37,12 +37,12 @@ class AttachedWindow(GUINode):
     if not nodes:
       return (0, 0)
     else:
-      return nodes[0].get_content_size()
+      return nodes[0].width, nodes[0].height
   
   def evaluate_position(self):
     if self.attach is not None:
       ww, wh = director.window.width, director.window.height
-      sw, sh = self.get_content_size()
+      sw, sh = self.margin_box[2:4]
       anchor_x, anchor_y = self.attach
       x = _anchor_to_position_a(anchor_x, ww, sw)
       y = _anchor_to_position_a(anchor_y, wh, sh)
@@ -65,7 +65,7 @@ class CenteredWindow(AttachedWindow):
   def evaluate_position(self):
     if self.attach is not None:
       ww, wh = director.window.width, director.window.height
-      sw, sh = self.get_content_size()
+      sw, sh = self.margin_box[2:4]
       anchor_x, anchor_y = self.attach
       x = _anchor_to_position_c(anchor_x, ww, sw)
       y = _anchor_to_position_c(anchor_y, wh, sh)

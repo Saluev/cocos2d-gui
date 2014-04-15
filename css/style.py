@@ -124,7 +124,9 @@ class StylesContainer(dict):
     except AttributeError:
       return self.get_by_subname(which)
   
-  def update(self, other):
+  def update(self, other={}, **kwargs):
+    other = dict(other)
+    other.update(kwargs)
     for key, value in other.items():
       if isinstance(value, StylesContainer):
         own = self.get_by_subname(key)
