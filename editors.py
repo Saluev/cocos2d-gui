@@ -31,10 +31,7 @@ class Caret(GUINode):
     selection = self.parent.selection
     if selection[0] != selection[1]:
       return
-    GL.glPushMatrix()
-    self.transform()
     self.glyph.draw()
-    GL.glPopMatrix()
   
   def apply_style(self, **options):
     super(Caret, self).apply_style(**options)
@@ -99,11 +96,12 @@ class TextEdit(GUINode):
   def update_caret(self):
     sel_left, sel_right = self.__selection
     if sel_left == sel_right:
-      self.caret.x = self.content_box[0] + self.offsets[sel_left]
+      cx = self.content_box[0] + self.offsets[sel_left]
     else:
-      self.caret.x = self.content_box[0] # TODO hide at all
-    self.caret.x -= self.caret.glyph.advance // 3 + 1
-    self.caret.y = self.content_box[1]
+      cx = self.content_box[0] # TODO hide at all
+    cx -= self.caret.glyph.advance // 3 + 1
+    cy = self.content_box[1]
+    self.caret.position = (cx, cy)
   
   def get_caret_pos(self, x):
     for i, offset in enumerate(self.offsets):
@@ -119,10 +117,7 @@ class TextEdit(GUINode):
   
   def smart_draw(self):
     super(TextEdit, self).smart_draw()
-    GL.glPushMatrix()
-    self.transform()
     self.text_label.draw()
-    GL.glPopMatrix()
   
   ## event handlers ##
   def key_press(self, button, modifiers):

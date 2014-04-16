@@ -35,24 +35,61 @@ def _recursive_event(what, *args):
     obj = obj.parent
 
 
-class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
+class SmartNode(pyglet.event.EventDispatcher):
   nodes_by_id = weakref.WeakValueDictionary()
   
   def __init__(self, *args, **kwargs):
-    super(SmartNode, self).__init__(*args, **kwargs)
     type(self).nodes_by_id[id(self)] = self
+    self.nodes = []
+    self.parent = None
+    self.position = (0, 0)
+  
+  def point_to_local(self, xy):
+    x, y = xy
+    parent = self
+    while parent is not None:
+      px, py = parent.position
+      x -= px
+      y -= py
+      parent = parent.parent
+    return x, y
+  
+  def point_to_world(self, xy):
+    x, y = xy
+    parent = self
+    while parent is not None:
+      px, py = parent.position
+      x += px
+      y += py
+      parent = parent.parent
+    return x, y
+  
+  def add(self, what):
+    self.nodes.append(what)
+    what.parent = self # TODO weakref property
+  
+  def get_nodes(self):
+    return self.nodes
   
   def transform(self):
-    super(SmartNode, self).transform()
+    x, y = self.position
+    GL.glTranslate(x, y, 0)
+    pass # DEPRECATED
+    #super(SmartNode, self).transform()
   
   def before_visit(self):
     GL.glPushName(id(self))
+    GL.glPushMatrix()
+    self.transform()
   
   def after_visit(self):
     GL.glPopName(id(self))
+    GL.glPopMatrix()
   
   def smart_visit(self):
-    super(SmartNode, self).visit()
+    self.draw()
+    for node in self.nodes:
+      node.visit()
   
   def visit(self):
     self.before_visit()
@@ -66,7 +103,7 @@ class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
     pass
   
   def smart_draw(self):
-    super(SmartNode, self).draw()
+    pass # abstract
   
   def draw(self, *args, **kwargs):
     self.before_draw()
@@ -119,11 +156,21 @@ SmartNode.register_event_type('on_blur')
 
 class SmartLayer(cocos.layer.base_layers.Layer):
   
+  is_event_handler = True
+  
   def __init__(self, *args, **kwargs):
     super(SmartLayer, self).__init__(*args, **kwargs)
     self.focused = None
     self.highlighted = []
     self.__mouse_position = (-1, -1)
+  
+  def on_enter(self):
+    director.window.push_handlers(self)
+  
+  def visit(self):
+    self.objects_under_cursor(*self.__mouse_position)
+    for child in self.get_children():
+      child.visit()
   
   def objects_under_cursor(self, x, y):
     """Writes to `self.highlighted` list of
@@ -219,7 +266,4 @@ class SmartLayer(cocos.layer.base_layers.Layer):
     if self.focused is not None:
       self.focused.key_release(key, modifiers)
       return True
-  
-  def visit(self):
-    self.objects_under_cursor(*self.__mouse_position)
-    super(SmartLayer, self).visit()
+

@@ -17,10 +17,7 @@ class Button(GUINode):
   
   def draw(self, *args, **kwargs):
     super(Button, self).draw(*args, **kwargs)
-    GL.glPushMatrix()
-    self.transform()
     self.text_label.draw()
-    GL.glPopMatrix()
   
   def apply_style(self, **options):
     super(Button, self).apply_style(**options)

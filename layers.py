@@ -7,8 +7,6 @@ from .node import GUINode
 
 class GUILayer(SmartLayer, CSSNode):
   
-  is_event_handler = True
-  
   def __init__(self, *args, **kwargs):
     SmartLayer.__init__(self, *args, **kwargs)
     CSSNode.__init__(self)
@@ -26,4 +24,10 @@ class GUILayer(SmartLayer, CSSNode):
 class LayerContainer(GUINode):
   def get_content_size(self):
     return director.window.width, director.window.height
+  
+  def add(self, what):
+    pass
+  
+  def on_enter(self):
+    pass
 

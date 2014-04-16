@@ -46,7 +46,7 @@ class AttachedWindow(GUINode):
       anchor_x, anchor_y = self.attach
       x = _anchor_to_position_a(anchor_x, ww, sw)
       y = _anchor_to_position_a(anchor_y, wh, sh)
-      self.position = (x, y)
+      self.set_position(x, y)
   
   def visit(self):
     self.evaluate_position()
@@ -69,7 +69,7 @@ class CenteredWindow(AttachedWindow):
       anchor_x, anchor_y = self.attach
       x = _anchor_to_position_c(anchor_x, ww, sw)
       y = _anchor_to_position_c(anchor_y, wh, sh)
-      self.position = (x, y)
+      self.set_position(x, y)
 
 
 class ModalWindow(CenteredWindow):

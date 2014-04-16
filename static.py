@@ -8,7 +8,10 @@ class Image(GUINode): # TODO: call it just Image
     super(Image, self).__init__()
     self.image = image
     self.sprite = cocos.sprite.Sprite(image, anchor=(0,0))
-    self.add(self.sprite)
+    #self.add(self.sprite)
+  
+  def smart_draw(self):
+    self.sprite.draw()
   
   def get_content_size(self):
     return (self.image.width, self.image.height)
@@ -38,7 +41,4 @@ class Label(GUINode):
 
   def smart_draw(self):
     super(Label, self).smart_draw()
-    GL.glPushMatrix()
-    self.transform()
     self.text_label.draw()
-    GL.glPopMatrix()

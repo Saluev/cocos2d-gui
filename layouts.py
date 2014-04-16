@@ -5,17 +5,12 @@ class GUILayout(GUINode):
   def __init__(self, spacing=5):
     super(GUILayout, self).__init__()
     self.spacing = spacing
-    self.__nodes = [] # TODO move this whole system to GUINode
   
   def __len__(self):
     return len(self.children)
   
-  def get_children(self):
-    return self.__nodes
-  
   def add(self, child, *args, **kwargs):
     super(GUILayout, self).add(child, *args, **kwargs)
-    self.__nodes.append(child)
     nodes = self.get_nodes()
     nodes_count = len(nodes)
     for i, node in enumerate(nodes):
@@ -32,7 +27,7 @@ class GUILayout(GUINode):
 class VerticalLayout(GUILayout):
   
   def get_content_size(self):
-    children = self.get_children()
+    children = self.get_nodes()
     if not children:
       return (0, 0)
     child_widths  = (child.width  for child in children)
@@ -44,7 +39,7 @@ class VerticalLayout(GUILayout):
   def apply_style(self, **options):
     super(VerticalLayout, self).apply_style(**options)
     # now place children properly
-    children = self.get_children()[::-1]
+    children = self.get_nodes()[::-1]
     xoffset, yoffset = self.content_box[:2]
     for child in children:
       box = child.margin_box
@@ -56,7 +51,7 @@ class VerticalLayout(GUILayout):
 class HorizontalLayout(GUILayout):
   
   def get_content_size(self):
-    children = self.get_children()
+    children = self.get_nodes()
     if not children:
       return (0, 0)
     child_widths  = (child.width  for child in children)
@@ -68,7 +63,7 @@ class HorizontalLayout(GUILayout):
   def apply_style(self, **options):
     super(HorizontalLayout, self).apply_style(**options)
     # now place children properly
-    children = self.get_children()
+    children = self.get_nodes()
     xoffset, yoffset = self.content_box[:2]
     for child in children:
       box = child.margin_box

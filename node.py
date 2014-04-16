@@ -33,10 +33,6 @@ class GUINode(SmartNode, CSSNode):
       parent = parent.parent
     return parent
   
-  def get_nodes(self):
-    children = self.get_children()
-    return [child for child in children if isinstance(child, CSSNode)]
-  
   def before_draw(self):
     if self.evaluated_style.overflow == 'hidden':
       GL.glPushAttrib(GL.GL_SCISSOR_BIT)
@@ -51,11 +47,11 @@ class GUINode(SmartNode, CSSNode):
   
   def smart_draw(self):
     super(GUINode, self).smart_draw()
-    GL.glPushMatrix()
-    self.transform()
+    #GL.glPushMatrix()
+    #self.transform()
     self.evaluated_style.background.draw()
     self.evaluated_style.border.draw()
-    GL.glPopMatrix()
+    #GL.glPopMatrix()
   
   def focus(self):
     self.add_state('focus')
