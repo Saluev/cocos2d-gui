@@ -178,7 +178,7 @@ class Style(StylesContainer):
   subnames = [
     'display', 'position',
     'left', 'top', 'width', 'height',
-    'margin', 'padding',
+    'margin', 'padding', 'overflow'
   ]
   
   def get_as_value(self):
@@ -199,4 +199,5 @@ styles['*'] = Style({
     'position': 'static',
     'left': 'auto',
     'top': 'auto',
+    'overflow': 'visible',
 })

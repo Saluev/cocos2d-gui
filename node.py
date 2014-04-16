@@ -37,8 +37,20 @@ class GUINode(SmartNode, CSSNode):
     children = self.get_children()
     return [child for child in children if isinstance(child, CSSNode)]
   
-  def draw(self, *args, **kwargs):
-    super(GUINode, self).draw(*args, **kwargs)
+  def before_draw(self):
+    if self.evaluated_style.overflow == 'hidden':
+      GL.glPushAttrib(GL.GL_SCISSOR_BIT)
+      GL.glEnable(GL.GL_SCISSOR_TEST)
+      box = self.border_box # WARNING it should definitely be content-box
+      left, bottom = map(int, self.point_to_world(box[:2]))
+      GL.glScissor(left, bottom, *box[2:])
+  
+  def after_draw(self):
+    if self.evaluated_style.overflow == 'hidden':
+      GL.glPopAttrib()
+  
+  def smart_draw(self):
+    super(GUINode, self).smart_draw()
     GL.glPushMatrix()
     self.transform()
     self.evaluated_style.background.draw()

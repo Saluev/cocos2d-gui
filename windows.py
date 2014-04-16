@@ -73,9 +73,7 @@ class CenteredWindow(AttachedWindow):
 
 
 class ModalWindow(CenteredWindow):
-  def __init__(self, attach=None, fade_color=(0, 0, 0, 128), **kwargs):
-    if attach is None:
-      attach = (50., 50.) # exact center
+  def __init__(self, attach=(50., 50.), fade_color=(0, 0, 0, 128), **kwargs):
     super(ModalWindow, self).__init__(attach=attach, **kwargs)
     self.fade_color = fade_color
   
@@ -98,6 +96,7 @@ class ModalWindow(CenteredWindow):
   
   def on_mouse_press(self, x, y, button, modifiers):
     pass # TODO close itself
+    return False
   
   def on_mouse_motion(self, *args):
     return False

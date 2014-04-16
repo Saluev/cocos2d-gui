@@ -9,6 +9,31 @@ import cocos
 from cocos.director import director
 from common.utility import reverse
 
+# TODO change lists under cursor to recursion over ONE
+# highest item under cursor' parents.
+
+def _recursive_event(what, *args):
+  """This is a private utility function that runs
+  event handling recursively for all ancestors of
+  SmartNode being also a SmartNode.
+  
+  Call example:
+  
+  >>> _recursive_event(self.mouse_motion, x, y, ...)
+  
+  So, it gets not an object, but it's bounded method
+  (which provides complete information on the object
+  and the method.)
+  """
+  obj = what.im_self
+  fname = what.im_func.__name__
+  while isinstance(obj, SmartNode):
+    if getattr(obj, fname)(*args) == False:
+      # event handling stops when someone returns False
+      # (at least in JavaScript.)
+      return
+    obj = obj.parent
+
 
 class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
   nodes_by_id = weakref.WeakValueDictionary()
@@ -26,11 +51,27 @@ class SmartNode(cocos.cocosnode.CocosNode, pyglet.event.EventDispatcher):
   def after_visit(self):
     GL.glPopName(id(self))
   
-  def visit(self):
-    # draw() method pattern
-    self.before_visit()
+  def smart_visit(self):
     super(SmartNode, self).visit()
+  
+  def visit(self):
+    self.before_visit()
+    self.smart_visit()
     self.after_visit()
+  
+  def before_draw(self):
+    pass
+  
+  def after_draw(self):
+    pass
+  
+  def smart_draw(self):
+    super(SmartNode, self).draw()
+  
+  def draw(self, *args, **kwargs):
+    self.before_draw()
+    self.smart_draw()
+    self.after_draw()
   
   # shortcuts for events #
   def focus(self):
@@ -135,15 +176,13 @@ class SmartLayer(cocos.layer.base_layers.Layer):
   
   def on_mouse_motion(self, x, y, dx, dy):
     self.__mouse_position = (x, y)
-    for obj in self.highlighted:
-      if obj.mouse_motion(x, y, dx, dy) == False:
-        break
+    for obj in self.highlighted[:1]:
+      _recursive_event(obj.mouse_motion, x, y, dx, dy)
   
   def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
     self.__mouse_position = (x, y)
-    for obj in self.highlighted:
-      if obj.mouse_drag(x, y, dx, dy, button, modifiers) == False:
-        break
+    for obj in self.highlighted[:1]:
+      _recursive_event(obj.mouse_drag, x, y, dx, dy, button, modifiers)
   
   def on_mouse_press(self, x, y, button, modifiers):
     self.__mouse_position = (x, y)
@@ -159,17 +198,15 @@ class SmartLayer(cocos.layer.base_layers.Layer):
         new_focused.focus()
     self.focused = new_focused
     # pressing
-    for obj in self.highlighted:
-      if obj.mouse_press(x, y, button, modifiers) == False:
-        break
+    for obj in self.highlighted[:1]:
+      _recursive_event(obj.mouse_press, x, y, button, modifiers)
     if self.highlighted:
       return True
   
   def on_mouse_release(self, x, y, button, modifiers):
     self.__mouse_position = (x, y)
-    for obj in self.highlighted:
-      if obj.mouse_release(x, y, button, modifiers) == False:
-        break
+    for obj in self.highlighted[:1]:
+      _recursive_event(obj.mouse_release, x, y, button, modifiers)
     if self.highlighted:
       return True
   

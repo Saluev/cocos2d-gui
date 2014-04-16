@@ -11,6 +11,8 @@ import border, borderimage, background, font
 import rendering
 
 def evaluate(window, element = None):
+  if window is None:
+    return
   if element is None:
     element = window
   element.evaluate_style()
@@ -37,6 +39,7 @@ def _evaluate_node(node):
   content_offset = [padding_offset[0] + style['padding-left'],
                     padding_offset[1] + style['padding-bottom' ]]
   content_box = content_offset + list(node.get_content_size())
+  assert(all(isinstance(val, int) for val in content_box))
   padding_box = padding_offset + [sum((
     content_box[2],
     style['padding-left'  ],

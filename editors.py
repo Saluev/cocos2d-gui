@@ -25,7 +25,7 @@ class Caret(GUINode):
   def get_content_size(self):
     return (self.glyph.width, self.glyph.height)
   
-  def draw(self, *args, **kwargs):
+  def smart_draw(self):
     if not self.parent.has_state('focus'):
       return
     selection = self.parent.selection
@@ -117,16 +117,11 @@ class TextEdit(GUINode):
     tl.x, tl.y, tl.width, tl.height = self.content_box
     self.update_caret()
   
-  def draw(self, *args, **kwargs):
-    super(TextEdit, self).draw(*args, **kwargs)
+  def smart_draw(self):
+    super(TextEdit, self).smart_draw()
     GL.glPushMatrix()
-    GL.glPushAttrib(GL.GL_SCISSOR_BIT)
     self.transform()
-    GL.glEnable(GL.GL_SCISSOR_TEST) # TODO move this to style['overflow'] = 'hidden'
-    left, bottom = map(int, self.point_to_world(self.padding_box[:2]))
-    GL.glScissor(left, bottom, *self.padding_box[2:])
     self.text_label.draw()
-    GL.glPopAttrib()
     GL.glPopMatrix()
   
   ## event handlers ##
@@ -219,8 +214,13 @@ class TextEdit(GUINode):
 
 TextEdit.register_event_type('on_selection_change')
 
-TextEdit.style['padding-bottom'] = 4
-TextEdit.style['border'] = (2, 'inset', 'gray')
-TextEdit.style['background-color'] = 'gray'
+TextEdit.style.update({
+  'width': 100,
+  'height': 14,
+  'padding': 4,
+  'border': (2, 'inset', 'gray'),
+  'background-color': 'gray',
+  'overflow': 'hidden'
+})
 TextEdit.pseudostyle('focus')['background-color'] = 'lightgray'
 TextEdit.pseudostyle('hover')['background-color'] = 'darkgray'
