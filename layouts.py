@@ -6,9 +6,6 @@ class GUILayout(GUINode):
     super(GUILayout, self).__init__()
     self.spacing = spacing
   
-  def __len__(self):
-    return len(self.children)
-  
   def add(self, child, *args, **kwargs):
     super(GUILayout, self).add(child, *args, **kwargs)
     nodes = self.get_nodes()

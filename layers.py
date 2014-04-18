@@ -5,6 +5,7 @@ from .css import CSSNode, evaluate as css_evaluate
 from .base import SmartLayer
 from .node import GUINode
 
+
 class GUILayer(SmartLayer, CSSNode):
   
   def __init__(self, *args, **kwargs):
@@ -22,12 +23,22 @@ class GUILayer(SmartLayer, CSSNode):
 
 
 class LayerContainer(GUINode):
+  def __init__(self):
+    super(LayerContainer, self).__init__()
+    self.layers = []
+  
   def get_content_size(self):
     return director.window.width, director.window.height
   
   def add(self, what):
-    pass
+    self.layers.append(what)
   
-  def on_enter(self):
-    pass
+  def apply_style(self, **options):
+    super(LayerContainer, self).apply_style(**options)
+    for layer in self.layers:
+      layer.on_enter()
+  
+  def smart_visit(self):
+    for layer in self.layers:
+      layer.visit()
 

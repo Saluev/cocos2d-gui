@@ -101,3 +101,33 @@ class ModalWindow(CenteredWindow):
   def on_mouse_motion(self, *args):
     return False
 
+
+from .static  import Label
+from .buttons import Button
+from .editors import TextEdit
+from .layouts import VerticalLayout
+
+class TextInputWindow(ModalWindow):
+  def __init__(self, description, initial_text='', button_text='OK', *args, **kwargs):
+    super(TextInputWindow, self).__init__(*args, **kwargs)
+    layout = VerticalLayout()
+    label = Label(description)
+    self.__editor = editor = TextEdit(text=initial_text)
+    button = Button(button_text)
+    layout.style.update({
+      'padding': 10,
+      'background-color': 'rgba(255, 255, 255, 0.5)',
+      'border': (5, 'outset', 'rgba(255, 255, 255, 0.5)')
+    }) # TODO: via styles['.TextInputWindow > .VerticalLayout']
+    layout.add(label)
+    layout.add(editor)
+    layout.add(button)
+    button.push_handlers(on_click=self.__button_click)
+    self.add(layout)
+    self.order()
+  
+  def __button_click(self):
+    result = self.__editor.text
+    self.dispatch_event('on_input_done', result)
+
+TextInputWindow.register_event_type('on_input_done')

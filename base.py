@@ -41,32 +41,55 @@ class SmartNode(pyglet.event.EventDispatcher):
   def __init__(self, *args, **kwargs):
     type(self).nodes_by_id[id(self)] = self
     self.nodes = []
-    self.parent = None
-    self.position = (0, 0)
+    self.__parent = None
+    self.__offset = (0, 0)
+    self.__position = (0, 0)
+  
+  @property
+  def parent(self):
+    if self.__parent is not None:
+      return self.__parent()
+  
+  @parent.setter
+  def parent(self, value):
+    self.__parent = weakref.ref(value) if value is not None else None
+  
+  @property
+  def offset(self):
+    return self.__offset
+  
+  @offset.setter
+  def offset(self, value):
+    self.__offset = value
+    ox, oy = value
+    px, py = self.__position
+    for node in self.get_nodes():
+      node.offset = (ox + px, oy + py)
+  
+  @property
+  def position(self):
+    return self.__position
+  
+  @position.setter
+  def position(self, value):
+    self.__position = value
+    self.offset = self.__offset # updates everything
   
   def point_to_local(self, xy):
     x, y = xy
-    parent = self
-    while parent is not None:
-      px, py = parent.position
-      x -= px
-      y -= py
-      parent = parent.parent
-    return x, y
+    ox, oy = self.__offset
+    px, py = self.position
+    return (x - ox - px, y - oy - py)
   
   def point_to_world(self, xy):
     x, y = xy
-    parent = self
-    while parent is not None:
-      px, py = parent.position
-      x += px
-      y += py
-      parent = parent.parent
-    return x, y
+    ox, oy = self.__offset
+    px, py = self.position
+    return (x + ox + px, y + oy + py)
   
   def add(self, what):
     self.nodes.append(what)
-    what.parent = self # TODO weakref property
+    what.parent = self
   
   def get_nodes(self):
     return self.nodes
@@ -74,8 +97,6 @@ class SmartNode(pyglet.event.EventDispatcher):
   def transform(self):
     x, y = self.position
     GL.glTranslate(x, y, 0)
-    pass # DEPRECATED
-    #super(SmartNode, self).transform()
   
   def before_visit(self):
     GL.glPushName(id(self))
@@ -140,6 +161,18 @@ class SmartNode(pyglet.event.EventDispatcher):
   
   def key_release(self, *args):
     self.dispatch_event('on_key_release', *args)
+  
+  def enter(self):
+    self.dispatch_event('on_enter')
+  
+  def exit(self):
+    self.dispatch_event('exit')
+  
+  def on_enter(self):
+    pass
+  
+  def on_exit(self):
+    self.parent = None
 
 
 SmartNode.register_event_type('on_mouse_release')
@@ -164,8 +197,11 @@ class SmartLayer(cocos.layer.base_layers.Layer):
     self.highlighted = []
     self.__mouse_position = (-1, -1)
   
-  def on_enter(self):
-    director.window.push_handlers(self)
+  #def on_enter(self):
+    #director.window.push_handlers(self)
+  
+  #def on_exit(self):
+    #director.window.remove_handlers(self)
   
   def visit(self):
     self.objects_under_cursor(*self.__mouse_position)

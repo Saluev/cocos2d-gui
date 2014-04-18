@@ -95,7 +95,7 @@ class TextEdit(GUINode):
   
   def update_caret(self):
     sel_left, sel_right = self.__selection
-    if sel_left == sel_right:
+    if sel_left == sel_right and self.offsets:
       cx = self.content_box[0] + self.offsets[sel_left]
     else:
       cx = self.content_box[0] # TODO hide at all
@@ -170,6 +170,8 @@ class TextEdit(GUINode):
     try:
       # TODO how to handle Cyrillic?..
       letter = chr(button)
+      if modifiers & key.MOD_SHIFT:
+        letter = letter.upper()
       self.replace_selection(letter)
     except ValueError:
       print("Unrecognized key:", button, modifiers)
@@ -211,8 +213,8 @@ TextEdit.register_event_type('on_selection_change')
 
 TextEdit.style.update({
   'width': 100,
-  'height': 14,
-  'padding': 4,
+  'height': 12,
+  'padding': 6,
   'border': (2, 'inset', 'gray'),
   'background-color': 'gray',
   'overflow': 'hidden'
